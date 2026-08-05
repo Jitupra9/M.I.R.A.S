@@ -1,0 +1,81 @@
+export const AVAILABLE_MODELS: AIModel[] = [
+  {
+    id: "gemini-3.1-pro-preview",
+    name: "Gemini 3.1 Pro",
+    provider: "gemini",
+    description: "Advanced reasoning",
+    icon: "✨",
+  },
+  {
+    id: "gemini-2.5-flash",
+    name: "Gemini 2.5 Flash",
+    provider: "gemini",
+    description: "Fast responses",
+    icon: "⚡",
+  },
+  {
+    id: "gemini-3-flash-preview",
+    name: "Gemini 3 Flash",
+    provider: "gemini",
+    description: "Latest flash",
+    icon: "🚀",
+  },
+  {
+    id: "gpt-5.2",
+    name: "GPT-5.2",
+    provider: "openai",
+    description: "Most capable",
+    icon: "🧠",
+  },
+  {
+    id: "gpt-5.1",
+    name: "GPT-5.1",
+    provider: "openai",
+    description: "Advanced reasoning",
+    icon: "🎯",
+  },
+  {
+    id: "gpt-4o",
+    name: "GPT-4o",
+    provider: "openai",
+    description: "Omnimodal",
+    icon: "🌐",
+  },
+  {
+    id: "deepseek-v3.1:671b",
+    name: "DeepSeek V3.1",
+    provider: "ollama",
+    description: "671B parameters",
+    icon: "🏠",
+  },
+  {
+    id: "llama3.2:latest",
+    name: "Llama 3.2",
+    provider: "ollama",
+    description: "Meta&apos;s LLM",
+    icon: "🦙",
+  },
+  {
+    id: "meta-llama/Llama-3.3-70B",
+    name: "Llama 3.3 70B",
+    provider: "huggingface",
+    description: "High performance",
+    icon: "🤗",
+  },
+  {
+    id: "mistralai/Mixtral-8x7B",
+    name: "Mixtral 8x7B",
+    provider: "huggingface",
+    description: "Mixture of experts",
+    icon: "🎭",
+  },
+];
+
+export const PROJECT_COLORS = [
+  { name: "Blue", value: "bg-blue-500" },
+  { name: "Green", value: "bg-emerald-500" },
+  { name: "Purple", value: "bg-violet-500" },
+  { name: "Orange", value: "bg-orange-500" },
+  { name: "Pink", value: "bg-pink-500" },
+  { name: "Cyan", value: "bg-cyan-500" },
+];
