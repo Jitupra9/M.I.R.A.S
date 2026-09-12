@@ -1,0 +1,74 @@
+# ============================================================
+#  M.I.R.A.S — Requirements
+#  Python 3.11+  |  pip install -r requirements.txt
+# ============================================================
+
+# ── CORE FRAMEWORK ──────────────────────────────────────────
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+python-multipart==0.0.19
+httpx==0.28.1
+
+# ── CONFIGURATION ─────────────────────────────────────────────
+pydantic-settings==2.13.0
+python-dotenv==1.0.1
+
+# ── DATABASE ──────────────────────────────────────────────────
+SQLAlchemy==2.0.36
+asyncpg==0.30.0
+alembic==1.14.0
+psycopg2-binary
+pgvector                      # PGVector SQLAlchemy integration
+
+# ── AUTH & SECURITY ───────────────────────────────────────────
+bcrypt==4.2.1
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+slowapi==0.1.9
+
+# ── LLM & LANGCHAIN ───────────────────────────────────────────
+langchain==0.3.25
+langchain-core
+langchain-community
+langchain-ollama               # Local LLMs via Ollama
+langchain-openai               # Optional: OpenAI fallback
+langchain-google-genai         # Optional: Gemini fallback
+
+# ── LANGGRAPH (Agent Orchestration) ──────────────────────────
+langgraph
+langgraph-checkpoint-sqlite    # SQLite checkpointer for short-term memory
+
+# ── SEARCH ────────────────────────────────────────────────────
+tavily-python                  # Tavily search (free tier)
+duckduckgo-search              # Free DuckDuckGo fallback
+
+# ── BROWSER AUTOMATION ────────────────────────────────────────
+playwright                     # Run: playwright install chromium
+
+# ── FILE GENERATION ───────────────────────────────────────────
+fpdf2                          # PDF creation
+openpyxl                       # Excel creation
+pandas                         # CSV + data manipulation
+python-docx                    # DOCX creation
+
+# ── DOCUMENT READING ──────────────────────────────────────────
+pymupdf                        # PDF reading
+pdfplumber                     # PDF text extraction
+
+# ── OS & SYSTEM ───────────────────────────────────────────────
+psutil                         # System monitoring
+
+# ── ASYNC UTILITIES ───────────────────────────────────────────
+aiofiles
+
+# ── EMAIL ─────────────────────────────────────────────────────
+aiosmtplib==3.0.2
+Jinja2==3.1.6
+
+# ── LOGGING ───────────────────────────────────────────────────
+loguru
+
+# ── TESTING ───────────────────────────────────────────────────
+pytest
+pytest-asyncio
+pytest-cov
