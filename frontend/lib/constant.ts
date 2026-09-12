@@ -1,9 +1,30 @@
 export const AVAILABLE_MODELS: AIModel[] = [
   {
+    id: "qwen2.5:3b",
+    name: "Qwen 2.5 3B",
+    provider: "ollama",
+    description: "Default • Local Structured Output",
+    icon: "🤖",
+  },
+  {
+    id: "llama3.2:latest",
+    name: "Llama 3.2",
+    provider: "ollama",
+    description: "Local • Meta AI",
+    icon: "🦙",
+  },
+  {
+    id: "tinyllama:latest",
+    name: "TinyLlama",
+    provider: "ollama",
+    description: "Local • Ultra Fast",
+    icon: "⚡",
+  },
+  {
     id: "gemini-3.1-pro-preview",
     name: "Gemini 3.1 Pro",
     provider: "gemini",
-    description: "Advanced reasoning",
+    description: "Cloud • Advanced reasoning",
     icon: "✨",
   },
   {

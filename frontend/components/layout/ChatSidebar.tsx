@@ -32,15 +32,14 @@ const ChatSidebar = ({
   onClearAllChats,
   isOpen,
   onToggle,
-  onUpgradeClick,
-  showUpgradeBanner,
-  onCloseUpgradeBanner,
   onCreateProject,
   onEditProject,
   onDeleteProject,
   onSelectProject,
   isCollapsed,
   onToggleCollapse,
+  currentUser,
+  onOpenAuth,
 }: {
   chats: ChatSession[];
   currentChatId: string | null;
@@ -56,15 +55,14 @@ const ChatSidebar = ({
   onClearAllChats: () => void;
   isOpen: boolean;
   onToggle: () => void;
-  onUpgradeClick?: () => void;
-  showUpgradeBanner?: boolean;
-  onCloseUpgradeBanner?: () => void;
   onCreateProject: () => void;
   onEditProject: (project: Project) => void;
   onDeleteProject: (id: string) => void;
   onSelectProject: (id: string | null) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  currentUser?: any;
+  onOpenAuth?: () => void;
 }) => {
   const [contextMenu, setContextMenu] = useState<{
     chat: ChatSession;
@@ -406,43 +404,31 @@ const ChatSidebar = ({
           )}
         </div>
 
-        {showUpgradeBanner && (
-          <div className="p-3 ">
-            <div className="relative bg-linear-to-br from-primary/10 to-accent/10 rounded-xl p-3 border border-primary/20">
-              <button
-                onClick={onCloseUpgradeBanner}
-                className="absolute top-2 right-2 p-1 rounded-lg hover:bg-sidebar-accent/50 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X className="w-3 h-3" />
-              </button>
-              <div className="flex items-center gap-2 mb-1">
-                <Crown className="w-4 h-4 text-primary" />
-                <span className="font-semibold text-sm">Upgrade to Pro</span>
-              </div>
-              <p className="text-xs text-muted-foreground mb-2">
-                Unlock unlimited chats & more
-              </p>
-              <button
-                onClick={onUpgradeClick}
-                className="w-full flex items-center justify-center gap-1 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:opacity-90 transition-all"
-              >
-                <Zap className="w-3 h-3" />
-                Upgrade Now
-              </button>
-            </div>
-          </div>
-        )}
-
         <div className="p-3 border-t border-sidebar-border space-y-2">
-          <button className="w-full flex items-center gap-2 hover:bg-sidebar-accent px-2 py-2 rounded-xl transition-colors">
+          <button
+            onClick={onOpenAuth}
+            className="w-full flex items-center gap-2 hover:bg-sidebar-accent px-2 py-2 rounded-xl transition-colors text-left group"
+          >
             <div className="w-8 h-8 rounded-xl bg-linear-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold text-sm">
-              G
+              {currentUser
+                ? (currentUser.full_name ||
+                    currentUser.username ||
+                    "U")[0].toUpperCase()
+                : "G"}
             </div>
-            <div className="flex-1 text-left">
-              <p className="text-sm font-medium">Guest User</p>
-              <p className="text-xs text-muted-foreground">Free Plan</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold truncate">
+                {currentUser
+                  ? currentUser.full_name || currentUser.username
+                  : "Sign In / Register"}
+              </p>
+              <p className="text-[10px] text-muted-foreground truncate">
+                {currentUser
+                  ? currentUser.profession || "Personal Memory Active"
+                  : "Click to connect memory"}
+              </p>
             </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 group-hover:translate-x-0.5 transition-transform" />
           </button>
         </div>
       </aside>

@@ -54,7 +54,6 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { getAIResponse } from "@/components/Mock/MockResponse";
-import VoiceListeningModal from "@/components/Models/VoiceListeningModal";
 import VoiceRecoder from "@/components/VoiceRecoder";
 import ModelSelector from "@/components/Models/ModelSelector";
 import PendingAttachment from "@/components/Models/PendingAttachment";
@@ -66,10 +65,11 @@ import CodeInputModal from "@/components/Models/CodeInputModal";
 import ProjectModel from "@/components/Models/ProjectModel";
 import SettingsModal from "@/components/Models/SettingsModal";
 import SearchModal from "@/components/Models/SearchModal";
-import UpgradeModal from "@/components/Models/UpgradeModal";
 import DeleteModal from "@/components/Models/DeleteModal";
+import AuthModal from "@/components/Models/AuthModal";
 import ChatSidebar from "@/components/layout/ChatSidebar";
 import AppHeader from "@/components/layout/AppHeader";
+
 export default function Home() {
   const [chats, setChats] = useState<ChatSession[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
@@ -81,6 +81,7 @@ export default function Home() {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [wasVoiceUsed, setWasVoiceUsed] = useState(false);
   const [isFileUploadOpen, setIsFileUploadOpen] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<UploadedFile[]>([]);
   const [selectedModel, setSelectedModel] = useState<AIModel>(
@@ -89,12 +90,13 @@ export default function Home() {
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [codeSnippets, setCodeSnippets] = useState<CodeSnippet[]>([]);
   const [isCodeModalOpen, setIsCodeModalOpen] = useState(false);
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
-  const [showUpgradeBanner, setShowUpgradeBanner] = useState(true);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{
     type: "chat" | "project";
     id: string;
@@ -102,10 +104,48 @@ export default function Home() {
   const [copiedMessage, setCopiedMessage] = useState(false);
   const [isTemporaryChat, setIsTemporaryChat] = useState(false);
 
+  useEffect(() => {
+    const savedUser = localStorage.getItem("miras_user");
+    const savedToken = localStorage.getItem("miras_token");
+    if (savedUser && savedToken) {
+      try {
+        setCurrentUser(JSON.parse(savedUser));
+      } catch {
+        setIsAuthModalOpen(true);
+      }
+    } else {
+      setIsAuthModalOpen(true);
+    }
+    setAuthChecked(true);
+  }, []);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const currentChat = chats.find((chat) => chat.id === currentChatId);
   const messages = currentChat?.messages || [];
+
+  const speakText = (text: string) => {
+    if ("speechSynthesis" in window) {
+      // Remove code blocks and clean up text for speech
+      const cleanText = text
+        .replace(/```[\s\S]*?```/g, "Code block omitted.")
+        .replace(/[#*]/g, "");
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+
+      // Try to find a good English voice
+      const voices = window.speechSynthesis.getVoices();
+      const preferredVoice = voices.find(
+        (v) =>
+          v.name.includes("Google") ||
+          v.name.includes("Premium") ||
+          v.lang === "en-US",
+      );
+      if (preferredVoice) utterance.voice = preferredVoice;
+
+      window.speechSynthesis.cancel(); // Cancel any ongoing speech
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -527,7 +567,8 @@ export default function Home() {
   };
 
   const sendMessage = async () => {
-    if ((!inputValue.trim() && pendingFiles.length === 0) || isLoading) return;
+    const textToSend = inputValue;
+    if ((!textToSend.trim() && pendingFiles.length === 0) || isLoading) return;
 
     const attachments: Attachment[] = pendingFiles.map((file) => ({
       id: file.id,
@@ -537,7 +578,7 @@ export default function Home() {
       size: file.size,
     }));
     const userQuery =
-      inputValue.trim() ||
+      textToSend.trim() ||
       (attachments.length > 0 ? "Can you analyze these files?" : "");
 
     const userMessage: Message = {
@@ -613,6 +654,11 @@ export default function Home() {
       }),
     );
     setIsLoading(false);
+
+    if (wasVoiceUsed) {
+      speakText(aiResponse);
+      setWasVoiceUsed(false);
+    }
   };
 
   const projectsWithCounts = projects.map((p) => ({
@@ -642,9 +688,6 @@ export default function Home() {
         onClearAllChats={clearAllChats}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(false)}
-        onUpgradeClick={() => setIsUpgradeModalOpen(true)}
-        showUpgradeBanner={showUpgradeBanner}
-        onCloseUpgradeBanner={() => setShowUpgradeBanner(false)}
         onCreateProject={() => {
           setEditingProject(null);
           setIsProjectModalOpen(true);
@@ -657,6 +700,8 @@ export default function Home() {
         onSelectProject={setCurrentProjectId}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
       />
 
       <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -856,14 +901,15 @@ export default function Home() {
                 </span>
               )}
               <VoiceRecoder
-                onTranscript={(text: any) =>
-                  setInputValue((prev) => prev + (prev ? " " : "") + text)
-                }
+                onTranscript={(text: any) => {
+                  setInputValue((prev) => prev + (prev ? " " : "") + text);
+                  setWasVoiceUsed(true);
+                }}
                 isListening={isListening}
                 setIsListening={setIsListening}
               />
               <button
-                onClick={sendMessage}
+                onClick={() => sendMessage()}
                 disabled={
                   (!inputValue.trim() &&
                     pendingFiles.length === 0 &&
@@ -905,10 +951,6 @@ export default function Home() {
             setIsCodeModalOpen(false);
           }}
         />
-      )}
-
-      {isUpgradeModalOpen && (
-        <UpgradeModal onClose={() => setIsUpgradeModalOpen(false)} />
       )}
 
       <ProjectModel
@@ -956,9 +998,23 @@ export default function Home() {
         }
       />
 
-      <VoiceListeningModal
-        isOpen={isListening}
-        onClose={() => setIsListening(false)}
+      <AuthModal
+        isOpen={isAuthModalOpen || (!currentUser && authChecked)}
+        onClose={() => {
+          if (currentUser) setIsAuthModalOpen(false);
+        }}
+        mandatory={!currentUser && authChecked}
+        currentUser={currentUser}
+        onAuthSuccess={(user) => {
+          setCurrentUser(user);
+          setIsAuthModalOpen(false);
+        }}
+        onLogout={() => {
+          localStorage.removeItem("miras_token");
+          localStorage.removeItem("miras_user");
+          setCurrentUser(null);
+          setIsAuthModalOpen(true);
+        }}
       />
 
       {copiedMessage && (
