@@ -97,6 +97,7 @@ export default function Home() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [hasDismissedAuth, setHasDismissedAuth] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{
     type: "chat" | "project";
     id: string;
@@ -711,6 +712,8 @@ export default function Home() {
           onOpenSettings={() => setIsSettingsOpen(true)}
           isTemporaryChat={isTemporaryChat}
           onToggleTemporaryChat={() => setIsTemporaryChat(!isTemporaryChat)}
+          currentUser={currentUser}
+          onOpenAuth={() => setIsAuthModalOpen(true)}
         />
 
         <div className="flex-1 overflow-y-auto">
@@ -999,20 +1002,25 @@ export default function Home() {
       />
 
       <AuthModal
-        isOpen={isAuthModalOpen || (!currentUser && authChecked)}
+        isOpen={
+          isAuthModalOpen || (!currentUser && authChecked && !hasDismissedAuth)
+        }
         onClose={() => {
-          if (currentUser) setIsAuthModalOpen(false);
+          setIsAuthModalOpen(false);
+          setHasDismissedAuth(true);
         }}
-        mandatory={!currentUser && authChecked}
+        mandatory={false}
         currentUser={currentUser}
         onAuthSuccess={(user) => {
           setCurrentUser(user);
           setIsAuthModalOpen(false);
+          setHasDismissedAuth(true);
         }}
         onLogout={() => {
           localStorage.removeItem("miras_token");
           localStorage.removeItem("miras_user");
           setCurrentUser(null);
+          setHasDismissedAuth(false);
           setIsAuthModalOpen(true);
         }}
       />

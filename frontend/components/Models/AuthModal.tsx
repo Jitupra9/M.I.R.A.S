@@ -3,9 +3,6 @@
 import React, { useState } from "react";
 import {
   X,
-  User,
-  Lock,
-  Mail,
   Briefcase,
   MapPin,
   Sparkles,
@@ -13,6 +10,7 @@ import {
   KeyRound,
   CheckCircle2,
   ArrowLeft,
+  Check,
 } from "lucide-react";
 
 interface AuthModalProps {
@@ -36,10 +34,10 @@ export default function AuthModal({
 }: AuthModalProps) {
   const [view, setView] = useState<AuthView>("login");
 
-  // Form states
-  const [email, setEmail] = useState("");
+  // Form states with handy demo defaults
+  const [email, setEmail] = useState("demo@miras.ai");
   const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState("demo123");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -54,125 +52,86 @@ export default function AuthModal({
 
   if (!isOpen) return null;
 
-  const backendUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+  // Approve & authenticate demo credentials locally
+  const approveAndLogin = async (
+    userEmail: string,
+    customProps?: Record<string, string>,
+  ) => {
+    setLoading(true);
+    setError(null);
+    setSuccessMsg("Demo credentials approved! Entering application...");
+
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    const cleanEmail = userEmail.trim() || "demo@miras.ai";
+    const isDefaultDemo = cleanEmail.toLowerCase() === "demo@miras.ai";
+
+    const userObj = {
+      email: cleanEmail,
+      username:
+        customProps?.username ||
+        (isDefaultDemo ? "DemoUser" : cleanEmail.split("@")[0]),
+      full_name:
+        customProps?.full_name ||
+        (isDefaultDemo ? "Demo User" : cleanEmail.split("@")[0]),
+      profession:
+        customProps?.profession ||
+        (isDefaultDemo ? "AI Explorer & Developer" : "Software Engineer"),
+      skills: customProps?.skills || "Next.js, TypeScript, Python, LLMs",
+      location: customProps?.location || "Demo Environment",
+      bio: customProps?.bio || "Exploring M.I.R.A.S Demo Application",
+    };
+
+    const token = "demo_jwt_token_" + Date.now();
+    localStorage.setItem("miras_token", token);
+    localStorage.setItem("miras_user", JSON.stringify(userObj));
+
+    onAuthSuccess(userObj, token);
+    onClose();
+    setLoading(false);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccessMsg(null);
-
-    try {
-      const res = await fetch(`${backendUrl}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: "Login failed" }));
-        throw new Error(err.detail || "Invalid email or password");
-      }
-
-      const data = await res.json();
-      localStorage.setItem("miras_token", data.access_token);
-
-      // Fetch user profile
-      const meRes = await fetch(`${backendUrl}/auth/me`, {
-        headers: { Authorization: `Bearer ${data.access_token}` },
-      });
-      const meData = await meRes.json();
-      localStorage.setItem("miras_user", JSON.stringify(meData));
-
-      onAuthSuccess(meData, data.access_token);
-      onClose();
-    } catch (err: any) {
-      setError(err.message || "Failed to log in");
-    } finally {
-      setLoading(false);
+    if (!email) {
+      setError("Please provide an email address.");
+      return;
     }
+    await approveAndLogin(email);
+  };
+
+  const handleQuickDemoLogin = async () => {
+    setEmail("demo@miras.ai");
+    setPassword("demo123");
+    await approveAndLogin("demo@miras.ai");
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccessMsg(null);
-
-    try {
-      const res = await fetch(`${backendUrl}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          username,
-          password,
-          full_name: fullName,
-          profession,
-          skills,
-          location,
-          bio,
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res
-          .json()
-          .catch(() => ({ detail: "Registration failed" }));
-        throw new Error(err.detail || "Registration failed");
-      }
-
-      const data = await res.json();
-      localStorage.setItem("miras_token", data.access_token);
-
-      const userObj = {
-        email,
-        username,
-        full_name: fullName,
-        profession,
-        skills,
-        location,
-        bio,
-      };
-      localStorage.setItem("miras_user", JSON.stringify(userObj));
-
-      onAuthSuccess(userObj, data.access_token);
-      onClose();
-    } catch (err: any) {
-      setError(err.message || "Registration failed");
-    } finally {
-      setLoading(false);
+    if (!email) {
+      setError("Please provide an email address.");
+      return;
     }
+    await approveAndLogin(email, {
+      username: username || email.split("@")[0],
+      full_name: fullName || username || "Demo User",
+      profession: profession || "AI Specialist",
+      skills: skills || "Fullstack & AI",
+      location: location || "Global",
+      bio: bio || "New M.I.R.A.S member",
+    });
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setSuccessMsg(null);
-
-    try {
-      const res = await fetch(`${backendUrl}/auth/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      if (!res.ok) {
-        const err = await res
-          .json()
-          .catch(() => ({ detail: "Email check failed" }));
-        throw new Error(err.detail || "No account found with this email");
-      }
-
-      setSuccessMsg("Email verified! Please enter your new password below.");
-      setView("reset");
-    } catch (err: any) {
-      setError(err.message || "Failed to verify email");
-    } finally {
-      setLoading(false);
-    }
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    setSuccessMsg(
+      "Demo verification approved! Please enter your new password below.",
+    );
+    setView("reset");
+    setLoading(false);
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -188,52 +147,34 @@ export default function AuthModal({
 
     setLoading(true);
     setError(null);
-    setSuccessMsg(null);
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
-    try {
-      const res = await fetch(`${backendUrl}/auth/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, new_password: newPassword }),
-      });
-
-      if (!res.ok) {
-        const err = await res
-          .json()
-          .catch(() => ({ detail: "Password reset failed" }));
-        throw new Error(err.detail || "Could not reset password");
-      }
-
-      setSuccessMsg(
-        "Password reset successfully! Please sign in with your new password.",
-      );
-      setView("login");
-      setPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (err: any) {
-      setError(err.message || "Failed to reset password");
-    } finally {
-      setLoading(false);
-    }
+    setSuccessMsg(
+      "Demo password reset successfully! Please sign in with your new password.",
+    );
+    setView("login");
+    setPassword(newPassword);
+    setNewPassword("");
+    setConfirmPassword("");
+    setLoading(false);
   };
 
   return (
     <div
       className="fixed inset-0 bg-background/90 backdrop-blur-md z-50 flex items-center justify-center p-4"
       onClick={(e) => {
-        if (!mandatory && e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) onClose();
       }}
     >
       <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
-        {!mandatory && (
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        )}
+        {/* Close button is always available to see the application */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          title="Close modal"
+        >
+          <X className="w-4 h-4" />
+        </button>
 
         {currentUser ? (
           /* Profile / Logout View */
@@ -254,7 +195,7 @@ export default function AuthModal({
                 <div className="flex items-center gap-1.5 mt-1">
                   <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />
                   <span className="text-[11px] text-emerald-500 font-medium">
-                    Memory Connected
+                    Demo Mode • Approved
                   </span>
                 </div>
               </div>
@@ -287,26 +228,34 @@ export default function AuthModal({
               )}
 
               <div className="p-3 bg-primary/5 rounded-xl border border-primary/10 text-muted-foreground text-[11px] leading-relaxed">
-                💡 Your long-term memory automatically updates with every
-                conversation.
+                ✨ <strong>Demo UI Active:</strong> All chats and settings are
+                securely kept in local browser memory.
               </div>
             </div>
 
-            <button
-              onClick={() => {
-                onLogout();
-                onClose();
-              }}
-              className="w-full flex items-center justify-center gap-2 py-2.5 bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20 rounded-xl text-sm font-medium transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign Out
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={onClose}
+                className="flex-1 py-2.5 bg-secondary hover:bg-secondary/80 text-foreground rounded-xl text-xs font-semibold transition-colors"
+              >
+                Back to App
+              </button>
+              <button
+                onClick={() => {
+                  onLogout();
+                  onClose();
+                }}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20 rounded-xl text-xs font-medium transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </button>
+            </div>
           </div>
         ) : (
           /* Authentication Flow */
           <div>
-            <div className="mb-5 text-center">
+            <div className="mb-4 text-center">
               <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-2 shadow-inner">
                 {view === "forgot" || view === "reset" ? (
                   <KeyRound className="w-5 h-5" />
@@ -316,21 +265,56 @@ export default function AuthModal({
               </div>
               <h2 className="text-lg font-bold text-foreground">
                 {view === "login" && "Sign In to M.I.R.A.S"}
-                {view === "register" && "Create Your Agent Account"}
-                {view === "forgot" && "Reset Your Password"}
+                {view === "register" && "Create Demo Account"}
+                {view === "forgot" && "Reset Password"}
                 {view === "reset" && "Enter New Password"}
               </h2>
               <p className="text-xs text-muted-foreground mt-1">
                 {view === "login" &&
-                  "Sign in to access your personal AI agent & memory."}
+                  "Enter demo credentials to approve and access the application."}
                 {view === "register" &&
-                  "Connect your profile & skills to the vector memory."}
-                {view === "forgot" &&
-                  "Enter your email to verify your account."}
+                  "Create a demo profile to test personal preferences & memory."}
+                {view === "forgot" && "Enter your email to verify demo access."}
                 {view === "reset" &&
-                  "Choose a secure new password for your account."}
+                  "Set your new password for your demo account."}
               </p>
             </div>
+
+            {/* DEMO CREDENTIALS BANNER */}
+            {view === "login" && (
+              <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-xl space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-primary flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" /> Demo Login
+                  </span>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-500 px-1.5 py-0.5 rounded font-medium flex items-center gap-1">
+                    <Check className="w-3 h-3" /> Auto-Approve
+                  </span>
+                </div>
+                <div className="text-[11px] text-muted-foreground flex justify-between">
+                  <span>
+                    Email:{" "}
+                    <strong className="text-foreground font-mono">
+                      demo@miras.ai
+                    </strong>
+                  </span>
+                  <span>
+                    Pass:{" "}
+                    <strong className="text-foreground font-mono">
+                      demo123
+                    </strong>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleQuickDemoLogin}
+                  disabled={loading}
+                  className="w-full py-2 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:opacity-90 transition-all shadow-sm flex items-center justify-center gap-1.5"
+                >
+                  ⚡ Quick Demo Login (Approve & Enter)
+                </button>
+              </div>
+            )}
 
             {error && (
               <div className="mb-4 p-2.5 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-xl">
@@ -350,14 +334,14 @@ export default function AuthModal({
               <form onSubmit={handleLogin} className="space-y-3">
                 <div>
                   <label className="text-[11px] font-medium text-muted-foreground block mb-1">
-                    Email Address *
+                    Email Address
                   </label>
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="user@example.com"
+                    placeholder="demo@miras.ai"
                     className="w-full px-3 py-2 bg-secondary/50 border border-border rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
@@ -365,7 +349,7 @@ export default function AuthModal({
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-[11px] font-medium text-muted-foreground">
-                      Password *
+                      Password
                     </label>
                     <button
                       type="button"
@@ -392,9 +376,9 @@ export default function AuthModal({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity mt-2"
+                  className="w-full py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity mt-2 flex items-center justify-center gap-1.5"
                 >
-                  {loading ? "Signing in..." : "Sign In"}
+                  {loading ? "Approving demo..." : "Approve & Sign In"}
                 </button>
               </form>
             )}
@@ -504,8 +488,8 @@ export default function AuthModal({
                   className="w-full py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity mt-2"
                 >
                   {loading
-                    ? "Creating account & seeding memory..."
-                    : "Create Account"}
+                    ? "Approving demo account..."
+                    : "Approve & Create Account"}
                 </button>
               </form>
             )}
@@ -532,7 +516,7 @@ export default function AuthModal({
                   disabled={loading}
                   className="w-full py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity mt-2"
                 >
-                  {loading ? "Verifying..." : "Verify Email"}
+                  {loading ? "Verifying..." : "Verify & Continue"}
                 </button>
               </form>
             )}
@@ -573,13 +557,13 @@ export default function AuthModal({
                   disabled={loading}
                   className="w-full py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity mt-2"
                 >
-                  {loading ? "Updating password..." : "Set New Password"}
+                  {loading ? "Updating password..." : "Approve New Password"}
                 </button>
               </form>
             )}
 
             {/* Bottom Navigation Links */}
-            <div className="mt-4 pt-3 border-t border-border/50 text-center space-y-1">
+            <div className="mt-4 pt-3 border-t border-border/50 text-center space-y-2">
               {view === "login" ? (
                 <button
                   type="button"
@@ -588,9 +572,9 @@ export default function AuthModal({
                     setError(null);
                     setSuccessMsg(null);
                   }}
-                  className="text-xs text-primary hover:underline"
+                  className="text-xs text-primary hover:underline block mx-auto"
                 >
-                  Don&apos;t have an account? Create one with profile memory
+                  Don&apos;t have an account? Create demo account
                 </button>
               ) : (
                 <button
@@ -606,6 +590,14 @@ export default function AuthModal({
                   Back to Sign In
                 </button>
               )}
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Skip & Explore Demo UI directly →
+              </button>
             </div>
           </div>
         )}
