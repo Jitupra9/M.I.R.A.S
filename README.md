@@ -18,14 +18,10 @@
 
 ---
 
-## 📑 Quick Navigation Index
+## 📑 Documentation Index
 
-- 🏛️ **[Full Architecture Diagram](./docs/architecture-diagram.md)**: LangGraph state machine, supervisor pattern & MCP layer.
-- 🔄 **[Task Execution & HITL Workflow](./docs/workflow-diagram.md)**: End-to-end task flows, approval gates & failover loops.
-- 🔌 **[MCP Tools Specification](./docs/mcp-tools.md)**: Web (Playwright), Desktop OS, Workspace & Dual Memory.
-- ⚡ **[Resilience & Safety Rules](./docs/resilience-and-safety.md)**: Guardrails, Anti-bot failover & checkpoint recovery.
-- 🛠️ **[Tech Stack Specification](./docs/tech-stack.md)**: Layer-by-layer breakdown & benchmark matrix.
-- 🎤 **[Senior AI Engineer Playbook](./docs/interview-playbook.md)**: MNC interview questions and deep-dive architectural answers.
+- 🚀 **[Comprehensive Feature Plan & Roadmap](./docs/FEATURE_PLAN.md)**: Architecture overview, multi-agent engine, implemented features, and roadmap.
+- 📱 **[Complete Build, Install & Run Guide](./docs/BUILD_AND_RUN_GUIDE.md)**: Step-by-step instructions for Laptop browser, Mobile Expo Go, building APK (EAS Cloud & Local Gradle), phone installation, and backend setup.
 
 ---
 

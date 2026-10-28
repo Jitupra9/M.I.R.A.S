@@ -6,5 +6,19 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Env files (if you keep any at root)
+# Dependencies & Build artifacts
+node_modules/
+.next/
+.expo/
+dist/
+web-build/
+*.tsbuildinfo
+*.log
+
+# Backups
+frontend_backup/
+
+# Env files
 .env
+.env*.local
+
