@@ -73,10 +73,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [cacheCleared, setCacheCleared] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const handleSelectTheme = (themeName: 'cyber' | 'claude') => {
+  const handleSelectTheme = (themeName: 'midnight' | 'cyber' | 'claude') => {
     setTheme(themeName);
     VoiceService.triggerHaptic('medium');
-    setStatusMessage(`Theme switched to ${themeName === 'cyber' ? 'Cyber Jarvis' : 'Claude Warm'}`);
+    const label =
+      themeName === 'midnight'
+        ? 'Midnight Navy (Emerald & Purple)'
+        : themeName === 'cyber'
+        ? 'Cyber Jarvis'
+        : 'Claude Warm';
+    setStatusMessage(`Theme switched to ${label}`);
     setTimeout(() => setStatusMessage(null), 2500);
   };
 
@@ -132,10 +138,38 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           <Text style={styles.sectionTitle}>APPLICATION THEME</Text>
         </View>
         <Text style={styles.sectionDesc}>
-          Choose your interface aesthetic. Default is Cyber Jarvis, or switch to Claude Warm.
+          Choose your interface aesthetic. Default is Midnight Navy, or switch to Cyber Jarvis or Claude Warm.
         </Text>
 
         <View style={styles.themeOptionsRow}>
+          {/* Midnight Navy (Primary / Default) */}
+          <TouchableOpacity
+            style={[
+              styles.themeCard,
+              currentTheme === 'midnight' && styles.themeCardActiveMidnight,
+            ]}
+            onPress={() => handleSelectTheme('midnight')}
+            activeOpacity={0.8}
+          >
+            <View style={styles.themeCardHeader}>
+              <View style={styles.midnightBadgeDot} />
+              <Text style={styles.themeCardTitle}>Midnight Navy</Text>
+              <View style={styles.defaultPill}>
+                <Text style={styles.defaultPillText}>DEFAULT</Text>
+              </View>
+              {currentTheme === 'midnight' && (
+                <Check size={14} color="#0CB981" style={{ marginLeft: 'auto' }} />
+              )}
+            </View>
+            <Text style={styles.themeCardSub}>Dark Navy, Deep Charcoal, Emerald & Purple (Primary)</Text>
+            <View style={styles.swatchRow}>
+              <View style={[styles.swatch, { backgroundColor: '#0F131E' }]} />
+              <View style={[styles.swatch, { backgroundColor: '#1C202B' }]} />
+              <View style={[styles.swatch, { backgroundColor: '#0CB981' }]} />
+              <View style={[styles.swatch, { backgroundColor: '#202068' }]} />
+            </View>
+          </TouchableOpacity>
+
           {/* Cyber Jarvis */}
           <TouchableOpacity
             style={[
@@ -152,7 +186,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <Check size={14} color="#00FFA3" style={{ marginLeft: 'auto' }} />
               )}
             </View>
-            <Text style={styles.themeCardSub}>Neon Emerald & Deep Forest Black (Default)</Text>
+            <Text style={styles.themeCardSub}>Neon Emerald & Deep Forest Black</Text>
             <View style={styles.swatchRow}>
               <View style={[styles.swatch, { backgroundColor: '#060E0A' }]} />
               <View style={[styles.swatch, { backgroundColor: '#0D1A14' }]} />
@@ -178,8 +212,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </View>
             <Text style={styles.themeCardSub}>Warm Terracotta & Sand Charcoal</Text>
             <View style={styles.swatchRow}>
-              <View style={[styles.swatch, { backgroundColor: '#181715' }]} />
-              <View style={[styles.swatch, { backgroundColor: '#23211E' }]} />
+              <View style={[styles.swatch, { backgroundColor: '#0D0C0A' }]} />
+              <View style={[styles.swatch, { backgroundColor: '#171512' }]} />
               <View style={[styles.swatch, { backgroundColor: '#D97757' }]} />
             </View>
           </TouchableOpacity>
@@ -485,6 +519,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.surfaceBorderSubtle,
   },
+  themeCardActiveMidnight: {
+    borderColor: '#0CB981',
+    backgroundColor: 'rgba(12, 185, 129, 0.08)',
+  },
   themeCardActiveCyber: {
     borderColor: '#00FFA3',
     backgroundColor: 'rgba(0, 255, 163, 0.05)',
@@ -498,6 +536,26 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     marginBottom: 4,
+  },
+  midnightBadgeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#0CB981',
+  },
+  defaultPill: {
+    backgroundColor: 'rgba(12, 185, 129, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(12, 185, 129, 0.3)',
+  },
+  defaultPillText: {
+    fontSize: 8.5,
+    fontWeight: '800',
+    color: '#0CB981',
+    letterSpacing: 0.5,
   },
   cyberBadgeDot: {
     width: 8,

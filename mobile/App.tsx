@@ -14,11 +14,13 @@ import { TasksScreen } from './src/screens/TasksScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { AuthorizationModal } from './src/components/AuthorizationModal';
 import { RoadblockModal } from './src/components/RoadblockModal';
+import { SplashScreen } from './src/components/SplashScreen';
 
 function MainApp() {
   const insets = useSafeAreaInsets();
   const { colors, themeName } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const [isSplashComplete, setIsSplashComplete] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<NavigationTab>('assistant');
   const [voiceState, setVoiceState] = useState<VoiceState>('IDLE');
   const [transcript, setTranscript] = useState<string>('');
@@ -237,6 +239,11 @@ function MainApp() {
           setActiveTask(null);
         }}
       />
+
+      {/* Premium Mobile Splash Screen Animation */}
+      {!isSplashComplete && (
+        <SplashScreen onFinish={() => setIsSplashComplete(true)} />
+      )}
     </View>
   );
 }

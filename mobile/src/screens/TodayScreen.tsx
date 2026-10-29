@@ -26,6 +26,8 @@ import {
 import { ThemeColors, useTheme } from '../theme/colors';
 import { VoiceService } from '../services/voiceService';
 import { ProfileModal } from '../components/ProfileModal';
+import { MirasLogo } from '../components/MirasLogo';
+import { AppHeader } from '../components/AppHeader';
 
 export const TodayScreen: React.FC = () => {
   const { colors } = useTheme();
@@ -72,16 +74,11 @@ export const TodayScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Top Header */}
-      <View style={styles.topHeader}>
-        <View style={styles.brandRow}>
-          <Text style={styles.brandText}>MIRAS</Text>
-        </View>
-        <TouchableOpacity style={styles.avatar} onPress={() => setIsProfileOpen(true)}>
-          <Text style={styles.avatarText}>A</Text>
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      {/* Unified Fixed Top Header */}
+      <AppHeader onOpenProfile={() => setIsProfileOpen(true)} />
+
+      <ScrollView style={styles.scrollWrapper} contentContainerStyle={styles.content}>
 
       {/* Greeting Banner */}
       <View style={styles.greetingCard}>
@@ -242,34 +239,39 @@ export const TodayScreen: React.FC = () => {
           </Text>
         </TouchableOpacity>
 
-        {/* Hydration Tracker with Plus and Minus */}
-        <View style={styles.habitCard}>
-          <Droplets size={18} color={colors.primary} />
-          <View style={styles.habitCol}>
-            <View style={styles.waterHeaderRow}>
-              <Text style={styles.habitTitle}>Hydration Tracker</Text>
-              <Text style={styles.waterCount}>
-                {glasses} / 8 glasses ({Math.round((glasses / 8) * 100)}%)
-              </Text>
+        {/* Hydration Tracker with Plus and Minus (Zero overlap) */}
+        <View style={styles.hydrationCard}>
+          <View style={styles.hydrationTopRow}>
+            <View style={styles.hydrationTitleGroup}>
+              <View style={styles.habitIconWrap}>
+                <Droplets size={16} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.habitTitle}>Hydration Tracker</Text>
+                <Text style={styles.waterCountSub}>
+                  {glasses} of 8 glasses ({Math.round((glasses / 8) * 100)}%)
+                </Text>
+              </View>
             </View>
-            <View style={styles.waterTrack}>
-              <View style={[styles.waterFill, { width: `${(glasses / 8) * 100}%` }]} />
+
+            <View style={styles.waterBtnRow}>
+              <TouchableOpacity
+                style={styles.waterMiniBtn}
+                onPress={() => handleLogWater(-1)}
+                disabled={glasses === 0}
+              >
+                <Minus size={12} color={glasses === 0 ? colors.textMuted : colors.primary} />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.logGlassBtn} onPress={() => handleLogWater(1)}>
+                <Plus size={12} color={colors.buttonTextDark} />
+                <Text style={styles.logGlassText}>+1</Text>
+              </TouchableOpacity>
             </View>
           </View>
 
-          <View style={styles.waterBtnRow}>
-            <TouchableOpacity
-              style={styles.waterMiniBtn}
-              onPress={() => handleLogWater(-1)}
-              disabled={glasses === 0}
-            >
-              <Minus size={12} color={glasses === 0 ? colors.textMuted : colors.primary} />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.logGlassBtn} onPress={() => handleLogWater(1)}>
-              <Plus size={12} color={colors.buttonTextDark} />
-              <Text style={styles.logGlassText}>+1</Text>
-            </TouchableOpacity>
+          <View style={styles.waterTrack}>
+            <View style={[styles.waterFill, { width: `${Math.min(100, (glasses / 8) * 100)}%` }]} />
           </View>
         </View>
       </View>
@@ -441,7 +443,8 @@ export const TodayScreen: React.FC = () => {
 
       {/* Profile & Settings Modal */}
       <ProfileModal visible={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
@@ -450,8 +453,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  scrollWrapper: {
+    flex: 1,
+  },
   content: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 8,
     paddingBottom: 40,
   },
   topHeader: {
@@ -768,16 +775,40 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: '700',
     color: colors.primary,
   },
-  waterHeaderRow: {
+  hydrationCard: {
+    backgroundColor: colors.cardBgSubtle,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorderSubtle,
+  },
+  hydrationTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 10,
   },
-  waterCount: {
+  hydrationTitleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    paddingRight: 8,
+  },
+  habitIconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.badgeBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  waterCountSub: {
     fontSize: 11,
     fontWeight: '700',
     color: colors.primary,
+    marginTop: 2,
   },
   waterTrack: {
     height: 6,

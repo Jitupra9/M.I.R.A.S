@@ -46,6 +46,8 @@ import {
 import { COLORS, ThemeColors, useTheme } from '../theme/colors';
 import { VoiceService } from '../services/voiceService';
 import { ProfileModal } from '../components/ProfileModal';
+import { MirasLogo } from '../components/MirasLogo';
+import { AppHeader } from '../components/AppHeader';
 
 export interface DetailViewItem {
   type: 'pdf' | 'email';
@@ -715,15 +717,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}
     >
-      {/* Top Header */}
-      <View style={styles.topHeader}>
-        <View style={styles.brandRow}>
-          <Text style={styles.brandText}>MIRAS</Text>
-        </View>
-        <TouchableOpacity style={styles.avatar} onPress={() => setIsProfileOpen(true)}>
-          <Text style={styles.avatarText}>A</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Unified Top Header */}
+      <AppHeader onOpenProfile={() => setIsProfileOpen(true)} />
 
       {/* Messages Feed */}
       <FlatList
@@ -2588,6 +2583,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   pdfActionRow: {
     flexDirection: 'row',
     gap: 10,
+    marginTop: 18,
+    paddingTop: 4,
   },
   pdfActionBtn: {
     flex: 1,

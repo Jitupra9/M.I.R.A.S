@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Dimensions,
 } from 'react-native';
 import {
   X,
@@ -16,14 +17,20 @@ import {
   Send,
   Volume2,
   User,
-  ChevronDown,
+  ArrowLeft,
+  ArrowRight,
+  MessageSquare,
+  Sparkles,
 } from 'lucide-react-native';
 import { COLORS, ThemeColors, useTheme } from '../theme/colors';
 import { VoiceOrb } from '../components/VoiceOrb';
 import { ProfileModal } from '../components/ProfileModal';
 import { AuthorizationModal } from '../components/AuthorizationModal';
+import { MirasLogo } from '../components/MirasLogo';
 import { VoiceService } from '../services/voiceService';
 import { VoiceState, AutonomousTask } from '../types';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface VoiceHomeScreenProps {
   voiceState: VoiceState;
@@ -37,6 +44,13 @@ interface VoiceHomeScreenProps {
   onDismissTask?: () => void;
 }
 
+interface SessionMessage {
+  id: string;
+  sender: 'user' | 'assistant';
+  text: string;
+  timestamp: string;
+}
+
 const AI_SUGGESTIONS = [
   'I can help you manage your tasks',
   'I can triage your unread emails',
@@ -47,7 +61,7 @@ const AI_SUGGESTIONS = [
 // Dedicated Typewriter Component with blinking cursor & character-by-character animation
 const TypewriterTagline: React.FC = () => {
   const { colors } = useTheme();
-  const styles = React.useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [text, setText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [index, setIndex] = useState(0);
@@ -68,24 +82,20 @@ const TypewriterTagline: React.FC = () => {
 
     if (!isDeleting) {
       if (text.length < currentSentence.length) {
-        // Typing: 75ms per character (within 60-100ms range)
         timer = setTimeout(() => {
           setText(currentSentence.slice(0, text.length + 1));
         }, 75);
       } else {
-        // Completed text pause: 1800ms (within 1.5-2s range)
         timer = setTimeout(() => {
           setIsDeleting(true);
         }, 1800);
       }
     } else {
       if (text.length > 0) {
-        // Smoothly erase text: 40ms per character (within 30-60ms range)
         timer = setTimeout(() => {
           setText(currentSentence.slice(0, text.length - 1));
         }, 40);
       } else {
-        // Short pause before starting next suggestion
         timer = setTimeout(() => {
           setIsDeleting(false);
           setIndex((prev) => (prev + 1) % AI_SUGGESTIONS.length);
@@ -117,15 +127,92 @@ export const VoiceHomeScreen: React.FC<VoiceHomeScreenProps> = ({
   onDismissTask,
 }) => {
   const { colors } = useTheme();
-  const styles = React.useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const horizontalScrollRef = useRef<any>(null);
+  const [currentPage, setCurrentPage] = useState<0 | 1>(0);
+
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAuthModalVisible, setIsAuthModalVisible] = useState(false);
   const [inputText, setInputText] = useState('');
 
+  // Keep a running session conversation history
+  const [sessionMessages, setSessionMessages] = useState<SessionMessage[]>([
+    {
+      id: 'init-msg',
+      sender: 'assistant',
+      text: "Hello Alex, I'm MIRAS. Ready to assist you with your schedule, emails, and daily tasks.",
+      timestamp: 'Just now',
+    },
+  ]);
+
+  // Sync spoken user query into conversation list
+  useEffect(() => {
+    if (transcript && transcript !== 'Listening softly...' && transcript.trim()) {
+      setSessionMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last && last.sender === 'user' && last.text === transcript.trim()) {
+          return prev;
+        }
+        return [
+          ...prev,
+          {
+            id: 'usr-' + Date.now(),
+            sender: 'user',
+            text: transcript.trim(),
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        ];
+      });
+    }
+  }, [transcript]);
+
+  // Sync assistant response into conversation list
+  useEffect(() => {
+    if (responsePreview && responsePreview.trim()) {
+      setSessionMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last && last.sender === 'assistant' && last.text === responsePreview.trim()) {
+          return prev;
+        }
+        return [
+          ...prev,
+          {
+            id: 'asst-' + Date.now(),
+            sender: 'assistant',
+            text: responsePreview.trim(),
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        ];
+      });
+    }
+  }, [responsePreview]);
+
+  const handleSlideToConversation = () => {
+    VoiceService.triggerHaptic('light');
+    horizontalScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
+    setCurrentPage(1);
+  };
+
+  const handleSlideToHome = () => {
+    VoiceService.triggerHaptic('light');
+    horizontalScrollRef.current?.scrollTo({ x: 0, animated: true });
+    setCurrentPage(0);
+  };
+
   const handleSendText = (textToSend?: string) => {
     const query = textToSend || inputText;
     if (query.trim()) {
+      // Add immediately to session messages
+      setSessionMessages((prev) => [
+        ...prev,
+        {
+          id: 'usr-' + Date.now(),
+          sender: 'user',
+          text: query.trim(),
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
       onSubmitQuery(query.trim());
       setInputText('');
       setIsKeyboardOpen(false);
@@ -139,81 +226,195 @@ export const VoiceHomeScreen: React.FC<VoiceHomeScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Scrollable Container so components NEVER overlap, even with long responses */}
+      {/* Dual Page Horizontal Pager: Page 0 is Clean Voice Orb, Page 1 is Current Conversation */}
       <ScrollView
-        style={styles.scrollWrapper}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+        ref={horizontalScrollRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        directionalLockEnabled
+        scrollEventThrottle={16}
+        onMomentumScrollEnd={(e) => {
+          const page = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+          setCurrentPage(page === 1 ? 1 : 0);
+        }}
+        style={styles.horizontalScroll}
+        contentContainerStyle={{ width: SCREEN_WIDTH * 2 }}
       >
-        {/* Top Header with Dynamic Island & Profile Icon */}
-        <View style={styles.topBar}>
-          <View style={styles.topBarLeft} />
-
-          {/* Dynamic Island Status Pill */}
-          <TouchableOpacity
-            style={styles.dynamicIslandPill}
-            onPress={handleStatusClick}
-            activeOpacity={0.8}
-          >
-            <View
-              style={[
-                styles.statusDot,
-                voiceState === 'LISTENING' && styles.statusDotListening,
-                voiceState === 'SPEAKING' && styles.statusDotSpeaking,
-              ]}
-            />
-            <Text style={styles.dynamicIslandText}>
-              {voiceState === 'LISTENING' ? '• REC' : '• MIRAS'}
-            </Text>
-            <View style={styles.batteryPip} />
-          </TouchableOpacity>
-
-          {/* Upper Profile Icon */}
-          <TouchableOpacity
-            style={styles.userAvatar}
-            onPress={() => setIsProfileOpen(true)}
-            activeOpacity={0.8}
-          >
-            <User size={16} color={colors.buttonTextDark} />
-          </TouchableOpacity>
-        </View>
-
-        {/* 3. Animated Typing Text at the Top + Static Main Title */}
-        <View style={styles.greetingHeader}>
-          <TypewriterTagline />
-          <Text style={styles.mainTitleText}>What Can I Do for You Today?</Text>
-        </View>
-
-        {/* 1, 2, 4. Center AI Orb, Audio Waveform & Diffused Glow Stage */}
-        <View style={styles.beaconStage}>
-          <VoiceOrb
-            state={voiceState}
-            onPress={onOrbPress}
-            onStopSpeech={onStopSpeech}
-          />
-        </View>
-
-        {/* Live Spoken Transcription Box (Shown when active) */}
-        {transcript ? (
-          <View style={styles.transcriptBox}>
-            <Text style={styles.transcriptLabel}>YOU</Text>
-            <Text style={styles.transcriptText}>"{transcript}"</Text>
+        {/* ================= PAGE 0: ASSISTANT VOICE ORB HOME ================= */}
+        <View style={[styles.pageWrapper, { width: SCREEN_WIDTH }]}>
+          {/* Top Bar: Profile icon only in the top-right corner in the exact same position */}
+          <View style={styles.topRightProfileContainer}>
+            <TouchableOpacity
+              style={[styles.userAvatar, { backgroundColor: colors.primary }]}
+              onPress={() => setIsProfileOpen(true)}
+              activeOpacity={0.8}
+              accessibilityLabel="Open Profile"
+            >
+              <Text style={[styles.avatarText, { color: colors.buttonTextDark }]}>A</Text>
+            </TouchableOpacity>
           </View>
-        ) : null}
 
-        {/* Assistant Response Box (Shown when active, beautifully flowing without overlap) */}
-        {responsePreview ? (
-          <View style={styles.responseBox}>
-            <View style={styles.responseHeaderRow}>
-              <Volume2 size={13} color={colors.primary} />
-              <Text style={styles.responseLabel}>MIRAS</Text>
+          <ScrollView
+            style={styles.scrollWrapper}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+
+            {/* 3. Animated Typing Text at the Top + Static Main Title */}
+            <View style={styles.greetingHeader}>
+              <TypewriterTagline />
+              <Text style={styles.mainTitleText}>What Can I Do for You Today?</Text>
             </View>
-            <Text style={styles.responseText}>{responsePreview}</Text>
+
+            {/* AI Orb, Audio Waveform & Diffused Glow Stage (Clean, zero talking messages here) */}
+            <View style={styles.beaconStage}>
+              <VoiceOrb
+                state={voiceState}
+                onPress={onOrbPress}
+                onStopSpeech={onStopSpeech}
+              />
+            </View>
+
+            {/* Bottom Actions: Slide Right to Current Conversation */}
+            <View style={styles.bottomCueContainer}>
+              <TouchableOpacity
+                style={styles.slideCueBtn}
+                onPress={handleSlideToConversation}
+                activeOpacity={0.8}
+              >
+                <View style={styles.slideCueLeft}>
+                  <View style={styles.slideCueIconCircle}>
+                    <MessageSquare size={16} color={colors.primary} />
+                  </View>
+                  <View>
+                    <Text style={styles.slideCueTitle}>Current Conversation</Text>
+                    <Text style={styles.slideCueSub}>Slide right to view messages</Text>
+                  </View>
+                </View>
+
+                <View style={styles.slideCueRight}>
+                  {sessionMessages.length > 0 && (
+                    <View style={styles.msgCountPill}>
+                      <Text style={styles.msgCountText}>{sessionMessages.length}</Text>
+                    </View>
+                  )}
+                  <ArrowRight size={17} color={colors.primary} />
+                </View>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+
+        {/* ================= PAGE 1: CURRENT CONVERSATION MESSAGES ================= */}
+        <View style={[styles.pageWrapper, { width: SCREEN_WIDTH }]}>
+          {/* Top Header with Return Arrow Button (<) */}
+          <View style={styles.conversationHeader}>
+            <TouchableOpacity
+              style={styles.backArrowBtn}
+              onPress={handleSlideToHome}
+              activeOpacity={0.7}
+              accessibilityLabel="Back to Voice Assistant"
+            >
+              <ArrowLeft size={20} color={colors.textPrimary} />
+            </TouchableOpacity>
+
+            <View style={styles.convHeaderCenter}>
+              <Text style={styles.convHeaderTitle}>Current Conversation</Text>
+              <Text style={styles.convHeaderSub}>Slide left or tap arrow to return</Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.convKeyboardBtn}
+              onPress={() => setIsKeyboardOpen(true)}
+              activeOpacity={0.8}
+            >
+              <Keyboard size={18} color={colors.primary} />
+            </TouchableOpacity>
           </View>
-        ) : null}
 
+          {/* Conversation Feed */}
+          <ScrollView
+            style={styles.conversationFeed}
+            contentContainerStyle={styles.conversationContent}
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled={true}
+            keyboardShouldPersistTaps="handled"
+          >
+            {sessionMessages.map((item) => {
+              const isUser = item.sender === 'user';
+              return (
+                <View
+                  key={item.id}
+                  style={[
+                    styles.convMessageRow,
+                    isUser ? styles.convMessageRowUser : styles.convMessageRowAssistant,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.convMessageBubble,
+                      isUser ? styles.convBubbleUser : styles.convBubbleAssistant,
+                    ]}
+                  >
+                    <View style={styles.convBubbleHeader}>
+                      <View style={styles.convSenderInfo}>
+                        {!isUser && (
+                          <MirasLogo size={14} glow glowColor={colors.primary} />
+                        )}
+                        <Text
+                          style={[
+                            styles.convSenderLabel,
+                            { color: isUser ? colors.primaryLight : colors.primary },
+                          ]}
+                        >
+                          {isUser ? 'YOU' : 'MIRAS'}
+                        </Text>
+                      </View>
 
+                      <View style={styles.convMetaRight}>
+                        {!isUser && (
+                          <TouchableOpacity
+                            onPress={() => VoiceService.speak(item.text)}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          >
+                            <Volume2 size={13} color={colors.primary} />
+                          </TouchableOpacity>
+                        )}
+                        <Text style={styles.convTimestamp}>{item.timestamp}</Text>
+                      </View>
+                    </View>
+
+                    <Text style={styles.convMessageText}>{item.text}</Text>
+                  </View>
+                </View>
+              );
+            })}
+
+            {sessionMessages.length === 0 && (
+              <View style={styles.convEmptyState}>
+                <MessageSquare size={36} color={colors.textMuted} />
+                <Text style={styles.convEmptyTitle}>No conversation messages yet</Text>
+                <Text style={styles.convEmptySub}>
+                  Speak to MIRAS or tap below to send a message.
+                </Text>
+              </View>
+            )}
+          </ScrollView>
+
+          {/* Bottom Quick-Reply Bar on Page 1 */}
+          <View style={styles.convBottomBar}>
+            <TouchableOpacity
+              style={styles.convInputPlaceholderBtn}
+              onPress={() => setIsKeyboardOpen(true)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.convInputPlaceholderText}>Type a message to MIRAS...</Text>
+              <Send size={15} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+        </View>
       </ScrollView>
 
       {/* Modal for typing message */}
@@ -280,6 +481,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  horizontalScroll: {
+    flex: 1,
+  },
+  pageWrapper: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   scrollWrapper: {
     flex: 1,
   },
@@ -288,66 +496,30 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 40,
+    paddingBottom: 24,
     justifyContent: 'space-between',
   },
-  topBar: {
+  topRightProfileContainer: {
+    height: 50,
     flexDirection: 'row',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 6,
+    paddingBottom: 6,
     width: '100%',
-    paddingVertical: 6,
-  },
-  topBarLeft: {
-    width: 34,
-  },
-  dynamicIslandPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  statusDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: colors.primary,
-  },
-  statusDotListening: {
-    backgroundColor: '#EF4444',
-  },
-  statusDotSpeaking: {
-    backgroundColor: colors.primaryLight,
-  },
-  dynamicIslandText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#E5E7EB',
-    letterSpacing: 0.5,
-  },
-  batteryPip: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: '#6B7280',
   },
   userAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 4,
+  },
+  avatarText: {
+    fontSize: 13,
+    fontWeight: '800',
   },
   greetingHeader: {
     alignItems: 'center',
@@ -386,109 +558,220 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 320,
-    marginVertical: 14,
+    minHeight: 300,
+    marginVertical: 10,
   },
-  transcriptBox: {
+  bottomCueContainer: {
     width: '100%',
     maxWidth: 380,
-    backgroundColor: colors.cardBg,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    alignItems: 'center',
     marginTop: 8,
+    gap: 10,
+  },
+  slideCueBtn: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.cardBg,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  slideCueLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  slideCueIconCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.badgeBg,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.surfaceBorderSubtle,
   },
-  transcriptLabel: {
-    fontSize: 9.5,
-    fontWeight: '800',
-    color: colors.textMuted,
-    letterSpacing: 0.8,
-    marginBottom: 3,
-  },
-  transcriptText: {
-    fontSize: 13,
-    fontStyle: 'italic',
+  slideCueTitle: {
+    fontSize: 13.5,
+    fontWeight: '700',
     color: colors.textPrimary,
-    lineHeight: 18,
   },
-  responseBox: {
-    width: '100%',
-    maxWidth: 380,
-    backgroundColor: colors.badgeBg,
-    borderRadius: 16,
+  slideCueSub: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+  slideCueRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  msgCountPill: {
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  msgCountText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.buttonTextDark,
+  },
+
+  // Current Conversation Page Styles
+  conversationHeader: {
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginTop: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surfaceBorderSubtle,
+  },
+  backArrowBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.cardBg,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
   },
-  responseHeaderRow: {
+  convHeaderCenter: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  convHeaderTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    letterSpacing: 0.3,
+  },
+  convHeaderSub: {
+    fontSize: 10.5,
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+  convKeyboardBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.cardBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+  },
+  conversationFeed: {
+    flex: 1,
+  },
+  conversationContent: {
+    padding: 16,
+    paddingBottom: 24,
+  },
+  convMessageRow: {
+    marginBottom: 14,
+    width: '100%',
+  },
+  convMessageRowUser: {
+    alignItems: 'flex-end',
+  },
+  convMessageRowAssistant: {
+    alignItems: 'flex-start',
+  },
+  convMessageBubble: {
+    maxWidth: '88%',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+  },
+  convBubbleUser: {
+    backgroundColor: colors.cardBg,
+    borderColor: colors.surfaceBorderSubtle,
+    borderBottomRightRadius: 4,
+  },
+  convBubbleAssistant: {
+    backgroundColor: colors.badgeBg,
+    borderColor: colors.surfaceBorder,
+    borderBottomLeftRadius: 4,
+  },
+  convBubbleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  convSenderInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 5,
   },
-  responseLabel: {
-    fontSize: 10,
+  convSenderLabel: {
+    fontSize: 10.5,
     fontWeight: '800',
-    color: colors.primary,
     letterSpacing: 0.8,
   },
-  responseText: {
-    fontSize: 13,
-    color: colors.textPrimary,
-    lineHeight: 19,
-  },
-  actionButtonsArea: {
-    width: '100%',
-    maxWidth: 380,
-    alignItems: 'center',
-    marginTop: 18,
-    gap: 12,
-  },
-  useKeyboardBtn: {
+  convMetaRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 8,
-    backgroundColor: colors.badgeBg,
-    borderRadius: 20,
-    paddingHorizontal: 22,
+  },
+  convTimestamp: {
+    fontSize: 10.5,
+    color: colors.textMuted,
+  },
+  convMessageText: {
+    fontSize: 13.5,
+    color: colors.textPrimary,
+    lineHeight: 19.5,
+  },
+  convEmptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    gap: 12,
+  },
+  convEmptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  convEmptySub: {
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: 'center',
+    paddingHorizontal: 24,
+  },
+  convBottomBar: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceBorderSubtle,
+    backgroundColor: colors.background,
+  },
+  convInputPlaceholderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.cardBg,
+    borderRadius: 14,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
   },
-  useKeyboardBtnText: {
-    fontSize: 13.5,
-    fontWeight: '600',
-    color: colors.primary,
-    letterSpacing: 0.2,
+  convInputPlaceholderText: {
+    fontSize: 13,
+    color: colors.textMuted,
   },
-  pendingHelpPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-    backgroundColor: 'rgba(245, 158, 11, 0.08)',
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.25)',
-  },
-  pendingDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#F59E0B',
-  },
-  pendingHelpText: {
-    fontSize: 11.5,
-    fontWeight: '600',
-    color: '#F59E0B',
-  },
+
+  // Modal styles
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.82)',

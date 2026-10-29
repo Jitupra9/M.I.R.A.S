@@ -32,6 +32,8 @@ import { ThemeColors, useTheme } from '../theme/colors';
 import { AutonomousTask } from '../types';
 import { VoiceService } from '../services/voiceService';
 import { ProfileModal } from '../components/ProfileModal';
+import { MirasLogo } from '../components/MirasLogo';
+import { AppHeader } from '../components/AppHeader';
 
 interface TasksScreenProps {
   tasks: AutonomousTask[];
@@ -632,18 +634,12 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
   }, [categoriesMeta, selectedCategory]);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Top Header */}
-      <View style={styles.topHeader}>
-        <View style={styles.brandRow}>
-          <Text style={styles.brandText}>MIRAS</Text>
-        </View>
-        <TouchableOpacity style={styles.avatar} onPress={() => setIsProfileOpen(true)}>
-          <Text style={styles.avatarText}>A</Text>
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      {/* Unified Fixed Top Header */}
+      <AppHeader onOpenProfile={() => setIsProfileOpen(true)} />
 
-      {/* Header */}
+      <ScrollView style={styles.scrollWrapper} contentContainerStyle={styles.content}>
+        {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Tasks & Chores</Text>
         <Text style={styles.subtitle}>
@@ -817,23 +813,40 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
               {activePeriodData.bars.map((item, idx) => (
                 <View key={idx} style={styles.barCol}>
                   <View style={styles.barTrack}>
-                    {/* Amber pending top segment if exists */}
-                    {item.pending > 0 && (
-                      <View
-                        style={[
-                          styles.pendingSegment,
-                          { height: Math.min(24, item.pending * (reportPeriod === 'yearly' ? 1.5 : 8)) },
-                        ]}
-                      />
-                    )}
-                    {/* Primary completed bar */}
-                    <View
-                      style={[
-                        styles.barFill,
-                        { height: item.height },
-                        item.isCurrent && styles.barFillToday,
-                      ]}
-                    />
+                    {(() => {
+                      const completedHeight = item.height;
+                      const pendingHeight = item.pending > 0
+                        ? Math.min(24, item.pending * (reportPeriod === 'yearly' ? 1.5 : 8))
+                        : 0;
+                      const totalHeight = Math.min(85, completedHeight + pendingHeight);
+
+                      if (totalHeight <= 0) return null;
+
+                      return (
+                        <View
+                          style={[
+                            styles.combinedBarColumn,
+                            {
+                              height: totalHeight,
+                              backgroundColor: item.pending > 0 ? colors.warning : colors.primary,
+                            },
+                          ]}
+                        >
+                          {completedHeight > 0 && (
+                            <View
+                              style={[
+                                styles.barFillCompleted,
+                                {
+                                  height: completedHeight,
+                                  backgroundColor: colors.primary,
+                                  opacity: item.isCurrent ? 1 : 0.85,
+                                },
+                              ]}
+                            />
+                          )}
+                        </View>
+                      );
+                    })()}
                   </View>
                   <Text style={[styles.dayLabel, item.isCurrent && styles.dayLabelToday]}>
                     {item.label}
@@ -1547,7 +1560,8 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
 
       {/* Profile Modal */}
       <ProfileModal visible={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
@@ -1556,8 +1570,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  scrollWrapper: {
+    flex: 1,
+  },
   content: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 8,
     paddingBottom: 40,
   },
   topHeader: {
@@ -1908,22 +1926,20 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 5,
     overflow: 'hidden',
   },
-  pendingSegment: {
+  combinedBarColumn: {
     width: 18,
-    backgroundColor: colors.warning,
-    opacity: 0.9,
     borderTopLeftRadius: 5,
     borderTopRightRadius: 5,
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 4,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
-  barFill: {
-    width: 18,
-    backgroundColor: colors.primary,
-    opacity: 0.7,
-    borderRadius: 4,
-  },
-  barFillToday: {
-    backgroundColor: colors.primary,
-    opacity: 1,
+  barFillCompleted: {
+    width: '100%',
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 4,
   },
   dayLabel: {
     fontSize: 10,
