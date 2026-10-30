@@ -39,6 +39,7 @@ interface TasksScreenProps {
   tasks: AutonomousTask[];
   onTriggerTask: (type: 'email' | 'flight' | 'resume') => void;
   onOpenApprovalModal?: () => void;
+  onOpenProfile?: () => void;
 }
 
 export type TaskStatus = 'pending' | 'in_progress' | 'completed';
@@ -290,6 +291,7 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
   tasks,
   onTriggerTask,
   onOpenApprovalModal,
+  onOpenProfile,
 }) => {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -636,7 +638,7 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
   return (
     <View style={styles.container}>
       {/* Unified Fixed Top Header */}
-      <AppHeader onOpenProfile={() => setIsProfileOpen(true)} />
+      <AppHeader onOpenProfile={onOpenProfile || (() => setIsProfileOpen(true))} />
 
       <ScrollView style={styles.scrollWrapper} contentContainerStyle={styles.content}>
         {/* Header */}
@@ -659,7 +661,10 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
             }}
           >
             <BarChart2 size={15} color={subTab === 'progress_overview' ? colors.primary : colors.textMuted} />
-            <Text style={[styles.subTabBtnText, subTab === 'progress_overview' && styles.subTabBtnTextActive]}>
+            <Text
+              numberOfLines={1}
+              style={[styles.subTabBtnText, subTab === 'progress_overview' && styles.subTabBtnTextActive]}
+            >
               Progress Overview
             </Text>
             <View style={styles.tabBadgeGreen}>
@@ -676,7 +681,10 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
             }}
           >
             <CheckSquare size={15} color={subTab === 'tasks' ? colors.primary : colors.textMuted} />
-            <Text style={[styles.subTabBtnText, subTab === 'tasks' && styles.subTabBtnTextActive]}>
+            <Text
+              numberOfLines={1}
+              style={[styles.subTabBtnText, subTab === 'tasks' && styles.subTabBtnTextActive]}
+            >
               Tasks
             </Text>
             <View style={styles.tabBadgeAmber}>
@@ -1631,18 +1639,19 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: colors.cardBg,
     borderRadius: 14,
-    padding: 4,
+    padding: 3,
     borderWidth: 1,
     borderColor: colors.surfaceBorderSubtle,
-    gap: 6,
+    gap: 4,
   },
   subTabBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
+    gap: 4,
+    paddingVertical: 9,
+    paddingHorizontal: 4,
     borderRadius: 10,
   },
   subTabBtnActive: {
@@ -1651,9 +1660,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderColor: colors.primaryBorder,
   },
   subTabBtnText: {
-    fontSize: 12.5,
+    fontSize: 11.5,
     fontWeight: '600',
     color: colors.textMuted,
+    letterSpacing: -0.2,
   },
   subTabBtnTextActive: {
     color: colors.primary,
@@ -1661,23 +1671,29 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   tabBadgeGreen: {
     backgroundColor: colors.surfaceCard,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
     borderRadius: 8,
+    minWidth: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabBadgeGreenText: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '800',
     color: colors.primary,
   },
   tabBadgeAmber: {
     backgroundColor: 'rgba(245, 158, 11, 0.2)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
     borderRadius: 8,
+    minWidth: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabBadgeAmberText: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '800',
     color: colors.warning,
   },
@@ -2181,6 +2197,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.surfaceBorderSubtle,
     gap: 8,
+    overflow: 'hidden',
   },
   taskCardPending: {
     borderColor: 'rgba(245, 158, 11, 0.35)',
@@ -2276,6 +2293,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
     marginTop: 2,
   },
   timestampItem: {
@@ -2485,6 +2504,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   categoryTaskTimestamps: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 4,
     paddingTop: 4,
     borderTopWidth: 1,
     borderTopColor: colors.surfaceBorderSubtle,

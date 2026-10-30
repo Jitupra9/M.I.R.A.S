@@ -1,6 +1,6 @@
 export type VoiceState = 'IDLE' | 'LISTENING' | 'PROCESSING' | 'SPEAKING';
 
-export type NavigationTab = 'assistant' | 'chat' | 'today' | 'tasks' | 'settings';
+export type NavigationTab = 'assistant' | 'chat' | 'today' | 'tasks' | 'settings' | 'profile';
 
 export interface EmailItem {
   id: string;

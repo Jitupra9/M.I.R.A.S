@@ -29,7 +29,11 @@ import { ProfileModal } from '../components/ProfileModal';
 import { MirasLogo } from '../components/MirasLogo';
 import { AppHeader } from '../components/AppHeader';
 
-export const TodayScreen: React.FC = () => {
+interface TodayScreenProps {
+  onOpenProfile?: () => void;
+}
+
+export const TodayScreen: React.FC<TodayScreenProps> = ({ onOpenProfile }) => {
   const { colors } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const [glasses, setGlasses] = useState(4);
@@ -76,7 +80,7 @@ export const TodayScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       {/* Unified Fixed Top Header */}
-      <AppHeader onOpenProfile={() => setIsProfileOpen(true)} />
+      <AppHeader onOpenProfile={onOpenProfile || (() => setIsProfileOpen(true))} />
 
       <ScrollView style={styles.scrollWrapper} contentContainerStyle={styles.content}>
 

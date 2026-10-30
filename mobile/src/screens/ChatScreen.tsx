@@ -252,9 +252,10 @@ const INITIAL_CHAT: Message[] = [
 
 interface ChatScreenProps {
   onSwitchToVoice?: () => void;
+  onOpenProfile?: () => void;
 }
 
-export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice }) => {
+export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice, onOpenProfile }) => {
   const { colors } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const [messages, setMessages] = useState<Message[]>(INITIAL_CHAT);
@@ -718,7 +719,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice }) => {
       style={styles.container}
     >
       {/* Unified Top Header */}
-      <AppHeader onOpenProfile={() => setIsProfileOpen(true)} />
+      <AppHeader onOpenProfile={onOpenProfile || (() => setIsProfileOpen(true))} />
 
       {/* Messages Feed */}
       <FlatList
@@ -739,9 +740,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice }) => {
                     <View style={styles.billHeader}>
                       <View style={styles.billTitleGroup}>
                         <Zap size={16} color={colors.primary} />
-                        <View>
-                          <Text style={styles.billTitle}>{item.billData.company}</Text>
-                          <Text style={styles.billDue}>{item.billData.dueDate}</Text>
+                        <View style={styles.billTitleTextCol}>
+                          <Text style={styles.billTitle} numberOfLines={1}>{item.billData.company}</Text>
+                          <Text style={styles.billDue} numberOfLines={1}>{item.billData.dueDate}</Text>
                         </View>
                       </View>
                       <Text style={styles.billAmount}>{item.billData.amount}</Text>
@@ -854,9 +855,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice }) => {
                     <View style={styles.flightHeader}>
                       <View style={styles.flightAirlineGroup}>
                         <Plane size={16} color={colors.primary} />
-                        <View>
-                          <Text style={styles.flightAirlineText}>{item.flightData.airline} #{item.flightData.flightNumber}</Text>
-                          <Text style={styles.flightRouteText}>{item.flightData.departureCity} ➔ {item.flightData.arrivalCity}</Text>
+                        <View style={styles.flightAirlineTextCol}>
+                          <Text style={styles.flightAirlineText} numberOfLines={1}>{item.flightData.airline} #{item.flightData.flightNumber}</Text>
+                          <Text style={styles.flightRouteText} numberOfLines={1}>{item.flightData.departureCity} ➔ {item.flightData.arrivalCity}</Text>
                         </View>
                       </View>
                       <View style={styles.flightPricePill}>
@@ -1631,16 +1632,24 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: 10,
     borderWidth: 1,
     borderColor: colors.surfaceBorderSubtle,
+    overflow: 'hidden',
   },
   billHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
   },
   billTitleGroup: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  billTitleTextCol: {
+    flex: 1,
+    minWidth: 0,
   },
   billTitle: {
     fontSize: 13,
@@ -1653,9 +1662,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: 1,
   },
   billAmount: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
     color: colors.primary,
+    flexShrink: 0,
   },
   diffCols: {
     flexDirection: 'row',
@@ -1851,16 +1861,24 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: 10,
     borderWidth: 1,
     borderColor: colors.surfaceBorderSubtle,
+    overflow: 'hidden',
   },
   flightHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
   },
   flightAirlineGroup: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  flightAirlineTextCol: {
+    flex: 1,
+    minWidth: 0,
   },
   flightAirlineText: {
     fontSize: 13,
@@ -1877,6 +1895,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
+    flexShrink: 0,
   },
   flightPriceText: {
     fontSize: 12,
@@ -2136,13 +2155,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
   // Attachment Sheet (+ Menu)
   attachmentSheet: {
-    backgroundColor: '#0A150F',
+    backgroundColor: colors.cardBgSubtle,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
     paddingBottom: 36,
     borderWidth: 1,
-    borderColor: 'rgba(0, 229, 153, 0.25)',
+    borderColor: colors.surfaceBorder,
     gap: 12,
   },
   sheetTopRow: {
@@ -2210,7 +2229,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#0A150F',
+    backgroundColor: colors.cardBgSubtle,
     borderBottomWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.06)',
   },
@@ -2452,13 +2471,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
   // PDF Modal Viewer
   pdfSheet: {
-    backgroundColor: '#0A150F',
+    backgroundColor: colors.cardBgSubtle,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
     maxHeight: '85%',
     borderWidth: 1,
-    borderColor: 'rgba(0, 229, 153, 0.25)',
+    borderColor: colors.surfaceBorder,
   },
   pdfHeader: {
     flexDirection: 'row',
@@ -2562,12 +2581,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.textPrimary,
   },
   whyHigherBox: {
-    backgroundColor: 'rgba(0, 229, 153, 0.06)',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderRadius: 12,
     padding: 12,
     marginTop: 14,
     borderWidth: 1,
-    borderColor: 'rgba(0, 229, 153, 0.15)',
+    borderColor: colors.surfaceBorderSubtle,
   },
   whyHigherTitle: {
     fontSize: 11.5,

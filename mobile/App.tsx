@@ -12,6 +12,7 @@ import { ChatScreen } from './src/screens/ChatScreen';
 import { TodayScreen } from './src/screens/TodayScreen';
 import { TasksScreen } from './src/screens/TasksScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
+import { ProfileScreen } from './src/screens/ProfileScreen';
 import { AuthorizationModal } from './src/components/AuthorizationModal';
 import { RoadblockModal } from './src/components/RoadblockModal';
 import { SplashScreen } from './src/components/SplashScreen';
@@ -22,6 +23,13 @@ function MainApp() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [isSplashComplete, setIsSplashComplete] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<NavigationTab>('assistant');
+  const [previousTab, setPreviousTab] = useState<NavigationTab>('assistant');
+
+  const handleOpenProfile = () => {
+    VoiceService.triggerHaptic('light');
+    setPreviousTab(activeTab);
+    setActiveTab('profile');
+  };
   const [voiceState, setVoiceState] = useState<VoiceState>('IDLE');
   const [transcript, setTranscript] = useState<string>('');
   const [responsePreview, setResponsePreview] = useState<string>('');
@@ -140,17 +148,21 @@ function MainApp() {
             onSubmitQuery={(q) => handleProcessQuery(q, false)}
             selectedModelName="MIRAS AI"
             onDismissTask={() => setActiveTask(null)}
+            onOpenProfile={handleOpenProfile}
           />
         )}
 
         {activeTab === 'chat' && (
           <ChatScreen
             onSwitchToVoice={() => setActiveTab('assistant')}
+            onOpenProfile={handleOpenProfile}
           />
         )}
 
         {activeTab === 'today' && (
-          <TodayScreen />
+          <TodayScreen
+            onOpenProfile={handleOpenProfile}
+          />
         )}
 
         {activeTab === 'tasks' && (
@@ -158,11 +170,26 @@ function MainApp() {
             tasks={tasks}
             onTriggerTask={handleTriggerQuickTask}
             onOpenApprovalModal={() => setIsAuthModalOpen(true)}
+            onOpenProfile={handleOpenProfile}
           />
         )}
 
         {activeTab === 'settings' && (
-          <SettingsScreen />
+          <SettingsScreen
+            onOpenProfile={handleOpenProfile}
+          />
+        )}
+
+        {activeTab === 'profile' && (
+          <ProfileScreen
+            onBack={() => {
+              setActiveTab(previousTab || 'assistant');
+            }}
+            onOpenSettings={() => {
+              setPreviousTab('profile');
+              setActiveTab('settings');
+            }}
+          />
         )}
       </View>
 
@@ -189,14 +216,7 @@ function MainApp() {
             <TouchableOpacity
               key={tab.id}
               activeOpacity={0.7}
-              style={[
-                styles.navItem,
-                isActive && {
-                  backgroundColor: colors.badgeBg,
-                  borderWidth: 1,
-                  borderColor: colors.surfaceBorder,
-                },
-              ]}
+              style={styles.navItem}
               onPress={() => {
                 VoiceService.triggerHaptic('light');
                 setActiveTab(tab.id);

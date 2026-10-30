@@ -16,6 +16,7 @@ import {
   Smartphone,
   Moon,
   Info,
+  ChevronRight,
 } from 'lucide-react-native';
 import { ThemeColors, useTheme, ThemeManager } from '../theme/colors';
 import { AIModelConfig } from '../types';
@@ -54,11 +55,13 @@ export const AI_MODELS: AIModelConfig[] = [
 interface SettingsScreenProps {
   selectedModel?: AIModelConfig;
   onSelectModel?: (model: AIModelConfig) => void;
+  onOpenProfile?: () => void;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   selectedModel = AI_MODELS[0],
   onSelectModel,
+  onOpenProfile,
 }) => {
   const { colors, themeName, setTheme } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
@@ -130,6 +133,32 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </View>
         )}
       </View>
+
+      {/* Quick Jump to Full Profile Page */}
+      {onOpenProfile && (
+        <TouchableOpacity
+          style={styles.profileJumpCard}
+          onPress={() => {
+            VoiceService.triggerHaptic('medium');
+            onOpenProfile();
+          }}
+          activeOpacity={0.8}
+        >
+          <View style={styles.profileAvatarCircle}>
+            <Text style={styles.profileAvatarText}>A</Text>
+          </View>
+          <View style={styles.profileInfoCol}>
+            <View style={styles.profileNameRow}>
+              <Text style={styles.profileName}>Alex Morgan</Text>
+              <View style={styles.profileTierBadge}>
+                <Text style={styles.profileTierBadgeText}>WORKSPACE PRO</Text>
+              </View>
+            </View>
+            <Text style={styles.profileEmail}>alex.morgan@workspace.io • Manage Profile & Accounts</Text>
+          </View>
+          <ChevronRight size={18} color={colors.primary} />
+        </TouchableOpacity>
+      )}
 
       {/* 1. APPLICATION THEME SELECTION (Item 8) */}
       <View style={styles.section}>
@@ -487,6 +516,62 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: colors.buttonTextDark,
+  },
+  profileJumpCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.cardBg,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    marginBottom: 20,
+  },
+  profileAvatarCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileAvatarText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.buttonTextDark,
+  },
+  profileInfoCol: {
+    flex: 1,
+  },
+  profileNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  profileName: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  profileTierBadge: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.35)',
+  },
+  profileTierBadgeText: {
+    fontSize: 8.5,
+    fontWeight: '800',
+    color: colors.primary,
+    letterSpacing: 0.3,
+  },
+  profileEmail: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
   section: {
     marginBottom: 24,

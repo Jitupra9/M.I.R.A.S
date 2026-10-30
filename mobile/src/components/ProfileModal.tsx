@@ -22,9 +22,12 @@ import {
   Plane,
   Check,
   Sparkles,
+  Server,
+  Settings2,
 } from 'lucide-react-native';
 import { ThemeColors, useTheme } from '../theme/colors';
 import { VoiceService } from '../services/voiceService';
+import { ConnectAccountsSection } from './ConnectAccountsSection';
 
 interface ProfileModalProps {
   visible: boolean;
@@ -36,347 +39,138 @@ export interface ProfileAccountItem {
   id: string;
   title: string;
   sub: string;
-  iconType: 'mail' | 'cloud' | 'github' | 'slack' | 'notion' | 'spotify' | 'amazon' | 'flight' | 'bank';
+  iconType: 'mail' | 'cloud' | 'github' | 'slack' | 'notion' | 'spotify' | 'amazon' | 'flight' | 'bank' | 'server';
   isLinked: boolean;
 }
-
-// Initial accounts displayed in the profile
-const INITIAL_CONNECTED_ACCOUNTS: ProfileAccountItem[] = [
-  {
-    id: 'google-workspace',
-    title: 'Google Workspace',
-    sub: 'alex.morgan@workspace.io • Gmail, Drive, Calendar',
-    iconType: 'mail',
-    isLinked: true,
-  },
-  {
-    id: 'delta-skymiles',
-    title: 'Delta SkyMiles Account',
-    sub: '#DL-9428148 • Medallion Priority',
-    iconType: 'cloud',
-    isLinked: true,
-  },
-];
-
-// Additional supported services and accounts that users can connect
-const SUPPORTED_ADDITIONAL_SERVICES: ProfileAccountItem[] = [
-  {
-    id: 'github',
-    title: 'GitHub Developer Platform',
-    sub: 'alexmorgan-ai • Repositories, PR triage & CI/CD',
-    iconType: 'github',
-    isLinked: false,
-  },
-  {
-    id: 'slack',
-    title: 'Slack Team Workspace',
-    sub: 'Acme AI Engineering • Standups, alerts & channels',
-    iconType: 'slack',
-    isLinked: false,
-  },
-  {
-    id: 'notion',
-    title: 'Notion Knowledge Base',
-    sub: 'Personal Wiki • System specs, roadmaps & notes',
-    iconType: 'notion',
-    isLinked: false,
-  },
-  {
-    id: 'spotify',
-    title: 'Spotify Audio Streaming',
-    sub: 'Focus playlists, background beats & podcasts',
-    iconType: 'spotify',
-    isLinked: false,
-  },
-  {
-    id: 'amazon',
-    title: 'Amazon Prime & Whole Foods',
-    sub: 'Automated household grocery replenishment',
-    iconType: 'amazon',
-    isLinked: false,
-  },
-  {
-    id: 'united',
-    title: 'United MileagePlus',
-    sub: '#UA-882194 • Star Alliance Gold check-in',
-    iconType: 'flight',
-    isLinked: false,
-  },
-  {
-    id: 'banking',
-    title: 'Chase Banking & Financial Vault',
-    sub: 'Automated receipt verification & budget checks',
-    iconType: 'bank',
-    isLinked: false,
-  },
-];
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({ visible, onClose, onOpenSettings }) => {
   const { colors } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
 
-  // Connected accounts list state (persists additions during session)
-  const [connectedAccounts, setConnectedAccounts] = useState<ProfileAccountItem[]>(INITIAL_CONNECTED_ACCOUNTS);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [connectionToast, setConnectionToast] = useState<string | null>(null);
 
-  const renderAccountIcon = (iconType: string, color: string) => {
-    switch (iconType) {
-      case 'mail':
-        return <Mail size={16} color={color} />;
-      case 'cloud':
-        return <Cloud size={16} color={color} />;
-      case 'github':
-        return <Code2 size={16} color={color} />;
-      case 'slack':
-        return <MessageSquare size={16} color={color} />;
-      case 'notion':
-        return <FileText size={16} color={color} />;
-      case 'spotify':
-        return <Headphones size={16} color={color} />;
-      case 'amazon':
-        return <ShoppingCart size={16} color={color} />;
-      case 'flight':
-        return <Plane size={16} color={color} />;
-      case 'bank':
-        return <CreditCard size={16} color={color} />;
-      default:
-        return <Cloud size={16} color={color} />;
-    }
-  };
-
-  const isServiceConnected = (serviceId: string) => {
-    return connectedAccounts.some(acc => acc.id === serviceId);
-  };
-
-  const handleConnectService = (service: ProfileAccountItem) => {
-    VoiceService.triggerHaptic('success');
-    if (isServiceConnected(service.id)) {
-      // Disconnect if already linked
-      setConnectedAccounts(prev => prev.filter(acc => acc.id !== service.id));
-      setConnectionToast(`Disconnected ${service.title}`);
-    } else {
-      // Connect new service
-      const newConnected: ProfileAccountItem = { ...service, isLinked: true };
-      setConnectedAccounts(prev => [...prev, newConnected]);
-      setConnectionToast(`Connected ${service.title}`);
-    }
-    setTimeout(() => setConnectionToast(null), 3000);
-  };
-
   return (
-    <>
-      <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-        <View style={styles.backdrop}>
-          <View style={styles.sheet}>
-            {/* Header */}
-            <View style={styles.header}>
-              <View style={styles.headerLeft}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>A</Text>
-                </View>
-                <View>
-                  <Text style={styles.userName}>Alex Morgan</Text>
-                  <Text style={styles.userEmail}>alex.morgan@workspace.io</Text>
-                </View>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.backdrop}>
+        <View style={styles.sheet}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>A</Text>
               </View>
-              <TouchableOpacity
-                style={styles.closeBtn}
-                onPress={() => {
-                  VoiceService.triggerHaptic('light');
-                  onClose();
-                }}
-              >
-                <X size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
+              <View>
+                <Text style={styles.userName}>Alex Morgan</Text>
+                <Text style={styles.userEmail}>alex.morgan@workspace.io</Text>
+              </View>
             </View>
-
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-              {/* Account Membership Tier Card */}
-              <View style={styles.tierCard}>
-                <View style={styles.tierHeaderRow}>
-                  <View style={styles.tierPill}>
-                    <Text style={styles.tierPillText}>WORKSPACE PRO</Text>
-                  </View>
-                  <Text style={styles.tierStatus}>Active Tier</Text>
-                </View>
-                <Text style={styles.tierTitle}>Alex's MIRAS Workspace</Text>
-                <Text style={styles.tierSub}>
-                  Unlimited multi-agent reasoning, local offline speech processing & encrypted device vault.
-                </Text>
-                <View style={styles.tierMetaRow}>
-                  <Text style={styles.tierMetaText}>Member since: Oct 2024</Text>
-                  <Text style={styles.tierMetaText}>• ID: #USR-98421</Text>
-                </View>
-              </View>
-
-              {/* Quick Link: Open Application Settings Tab */}
-              {onOpenSettings && (
-                <TouchableOpacity
-                  style={styles.settingsRedirectBtn}
-                  onPress={() => {
-                    VoiceService.triggerHaptic('medium');
-                    onClose();
-                    onOpenSettings();
-                  }}
-                >
-                  <View style={styles.settingsIconCircle}>
-                    <Settings size={18} color={colors.primary} />
-                  </View>
-                  <View style={styles.settingsRedirectTextCol}>
-                    <Text style={styles.settingsRedirectTitle}>Application Settings</Text>
-                    <Text style={styles.settingsRedirectSub}>Theme, Voice Audio, AI Models & System Chores</Text>
-                  </View>
-                  <ChevronRight size={18} color={colors.primary} />
-                </TouchableOpacity>
-              )}
-
-              {/* Toast for connection feedback */}
-              {connectionToast && (
-                <View style={styles.toast}>
-                  <CheckCircle2 size={14} color={colors.buttonTextDark} />
-                  <Text style={styles.toastText}>{connectionToast}</Text>
-                </View>
-              )}
-
-              {/* Section 1: Connected Services & Integrations with ADD button (Item 1) */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeaderRow}>
-                  <Text style={styles.sectionHeader}>CONNECTED ACCOUNTS & MCP</Text>
-                  <TouchableOpacity
-                    style={styles.addAccountBtn}
-                    onPress={() => {
-                      VoiceService.triggerHaptic('light');
-                      setIsAddModalOpen(true);
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Plus size={12} color={colors.buttonTextDark} />
-                    <Text style={styles.addAccountBtnText}>Add</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {connectedAccounts.map(account => (
-                  <View key={account.id} style={styles.accountRow}>
-                    <View style={styles.accountIconBox}>
-                      {renderAccountIcon(account.iconType, colors.primary)}
-                    </View>
-                    <View style={styles.accountInfoCol}>
-                      <Text style={styles.accountTitle}>{account.title}</Text>
-                      <Text style={styles.accountSub}>{account.sub}</Text>
-                    </View>
-                    <View style={styles.connectedBadge}>
-                      <CheckCircle2 size={12} color={colors.success} />
-                      <Text style={styles.connectedBadgeText}>Linked</Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-
-              {/* Section 2: Security & Authentication */}
-              <View style={styles.section}>
-                <Text style={styles.sectionHeader}>SECURITY & 2-FACTOR AUTHENTICATION</Text>
-
-                <View style={styles.securityRow}>
-                  <Smartphone size={16} color={colors.primary} />
-                  <View style={styles.securityTextCol}>
-                    <Text style={styles.securityRowTitle}>Primary Security Channel</Text>
-                    <Text style={styles.securityRowSub}>SMS & WhatsApp Verified (+1 ••• ••• 4920)</Text>
-                  </View>
-                  <Text style={styles.securityActiveBadge}>2FA ON</Text>
-                </View>
-
-                <View style={styles.securityRow}>
-                  <Lock size={16} color={colors.primary} />
-                  <View style={styles.securityTextCol}>
-                    <Text style={styles.securityRowTitle}>Device Vault Encryption</Text>
-                    <Text style={styles.securityRowSub}>Hardware AES-256 Biometric Keyring</Text>
-                  </View>
-                  <Text style={styles.securityActiveBadge}>SECURE</Text>
-                </View>
-              </View>
-
-              {/* Security Guarantee Note */}
-              <View style={styles.securityBox}>
-                <Shield size={16} color={colors.primary} />
-                <Text style={styles.securityText}>
-                  All personal credentials and 2FA SMS security codes remain strictly encrypted inside your local device vault.
-                </Text>
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      {/* ========================================================
-          MODAL: ADD & CONNECT ACCOUNTS / SERVICES (Item 1)
-          ======================================================== */}
-      <Modal visible={isAddModalOpen} transparent animationType="slide" onRequestClose={() => setIsAddModalOpen(false)}>
-        <View style={styles.backdrop}>
-          <View style={styles.addSheet}>
-            {/* Sheet Header */}
-            <View style={styles.addSheetHeader}>
-              <View style={styles.addSheetHeaderLeft}>
-                <Sparkles size={18} color={colors.primary} />
-                <View>
-                  <Text style={styles.addSheetTitle}>Connect Accounts & Services</Text>
-                  <Text style={styles.addSheetSub}>Link tools and MCP providers to Alex's MIRAS Workspace</Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                style={styles.closeBtn}
-                onPress={() => setIsAddModalOpen(false)}
-              >
-                <X size={18} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            {/* List of Available Services */}
-            <ScrollView showsVerticalScrollIndicator={false} style={styles.addServicesScroll} contentContainerStyle={styles.addServicesScrollContent}>
-              {SUPPORTED_ADDITIONAL_SERVICES.map(service => {
-                const connected = isServiceConnected(service.id);
-                return (
-                  <View key={service.id} style={[styles.serviceOptionCard, connected && styles.serviceOptionCardConnected]}>
-                    <View style={styles.accountIconBox}>
-                      {renderAccountIcon(service.iconType, colors.primary)}
-                    </View>
-                    <View style={styles.serviceOptionCol}>
-                      <Text style={styles.serviceOptionTitle}>{service.title}</Text>
-                      <Text style={styles.serviceOptionSub}>{service.sub}</Text>
-                    </View>
-                    <TouchableOpacity
-                      style={[styles.connectActionBtn, connected && styles.connectActionBtnLinked]}
-                      onPress={() => handleConnectService(service)}
-                      activeOpacity={0.8}
-                    >
-                      {connected ? (
-                        <>
-                          <Check size={12} color={colors.success} />
-                          <Text style={styles.connectActionBtnLinkedText}>Linked</Text>
-                        </>
-                      ) : (
-                        <>
-                          <Plus size={12} color={colors.buttonTextDark} />
-                          <Text style={styles.connectActionBtnText}>Connect</Text>
-                        </>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                );
-              })}
-            </ScrollView>
-
-            {/* Footer Button */}
             <TouchableOpacity
-              style={styles.doneBtn}
-              onPress={() => setIsAddModalOpen(false)}
+              style={styles.closeBtn}
+              onPress={() => {
+                VoiceService.triggerHaptic('light');
+                onClose();
+              }}
             >
-              <Text style={styles.doneBtnText}>Done</Text>
+              <X size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            {/* Account Membership Tier Card */}
+            <View style={styles.tierCard}>
+              <View style={styles.tierHeaderRow}>
+                <View style={styles.tierPill}>
+                  <Text style={styles.tierPillText}>WORKSPACE PRO</Text>
+                </View>
+                <Text style={styles.tierStatus}>Active Tier</Text>
+              </View>
+              <Text style={styles.tierTitle}>Alex's MIRAS Workspace</Text>
+              <Text style={styles.tierSub}>
+                Unlimited multi-agent reasoning, local offline speech processing & encrypted device vault.
+              </Text>
+              <View style={styles.tierMetaRow}>
+                <Text style={styles.tierMetaText}>Member since: Oct 2024</Text>
+                <Text style={styles.tierMetaText}>• ID: #USR-98421</Text>
+              </View>
+            </View>
+
+            {/* Quick Link: Open Application Settings Tab */}
+            {onOpenSettings && (
+              <TouchableOpacity
+                style={styles.settingsRedirectBtn}
+                onPress={() => {
+                  VoiceService.triggerHaptic('medium');
+                  onClose();
+                  onOpenSettings();
+                }}
+              >
+                <View style={styles.settingsIconCircle}>
+                  <Settings size={18} color={colors.primary} />
+                </View>
+                <View style={styles.settingsRedirectTextCol}>
+                  <Text style={styles.settingsRedirectTitle}>Application Settings</Text>
+                  <Text style={styles.settingsRedirectSub}>Theme, Voice Audio, AI Models & System Chores</Text>
+                </View>
+                <ChevronRight size={18} color={colors.primary} />
+              </TouchableOpacity>
+            )}
+
+            {/* Toast for connection feedback */}
+            {connectionToast && (
+              <View style={styles.toast}>
+                <CheckCircle2 size={14} color={colors.buttonTextDark} />
+                <Text style={styles.toastText}>{connectionToast}</Text>
+              </View>
+            )}
+
+            {/* Section 1: Connect Accounts & Services (Category-Based Layout) */}
+            <View style={styles.accountsSection}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionHeader}>CONNECT ACCOUNTS & SERVICES</Text>
+              </View>
+
+              <ConnectAccountsSection
+                onShowToast={msg => {
+                  setConnectionToast(msg);
+                  setTimeout(() => setConnectionToast(null), 3000);
+                }}
+              />
+            </View>
+
+            {/* Section 2: Security & Authentication */}
+            <View style={styles.section}>
+              <Text style={styles.sectionHeader}>SECURITY & 2-FACTOR AUTHENTICATION</Text>
+
+              <View style={styles.securityRow}>
+                <Smartphone size={16} color={colors.primary} />
+                <View style={styles.securityTextCol}>
+                  <Text style={styles.securityRowTitle}>Primary Security Channel</Text>
+                  <Text style={styles.securityRowSub}>SMS & WhatsApp Verified (+1 ••• ••• 4920)</Text>
+                </View>
+                <Text style={styles.securityActiveBadge}>2FA ON</Text>
+              </View>
+
+              <View style={styles.securityRow}>
+                <Lock size={16} color={colors.primary} />
+                <View style={styles.securityTextCol}>
+                  <Text style={styles.securityRowTitle}>Device Vault Encryption</Text>
+                  <Text style={styles.securityRowSub}>Hardware AES-256 Biometric Keyring</Text>
+                </View>
+                <Text style={styles.securityActiveBadge}>SECURE</Text>
+              </View>
+            </View>
+
+            {/* Security Guarantee Note */}
+            <View style={styles.securityBox}>
+              <Shield size={16} color={colors.primary} />
+              <Text style={styles.securityText}>
+                All personal credentials and 2FA SMS security codes remain strictly encrypted inside your local device vault.
+              </Text>
+            </View>
+          </ScrollView>
         </View>
-      </Modal>
-    </>
+      </View>
+    </Modal>
   );
 };
 
@@ -545,7 +339,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.buttonTextDark,
   },
 
-  // Section with ADD button header (Item 1)
+  accountsSection: {
+    gap: 8,
+    marginBottom: 6,
+  },
   section: {
     backgroundColor: colors.cardBg,
     borderRadius: 16,

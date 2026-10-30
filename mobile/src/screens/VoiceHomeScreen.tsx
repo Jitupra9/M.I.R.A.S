@@ -42,6 +42,7 @@ interface VoiceHomeScreenProps {
   onSubmitQuery: (query: string) => void;
   selectedModelName?: string;
   onDismissTask?: () => void;
+  onOpenProfile?: () => void;
 }
 
 interface SessionMessage {
@@ -125,6 +126,7 @@ export const VoiceHomeScreen: React.FC<VoiceHomeScreenProps> = ({
   onStopSpeech,
   onSubmitQuery,
   onDismissTask,
+  onOpenProfile,
 }) => {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -243,17 +245,24 @@ export const VoiceHomeScreen: React.FC<VoiceHomeScreenProps> = ({
       >
         {/* ================= PAGE 0: ASSISTANT VOICE ORB HOME ================= */}
         <View style={[styles.pageWrapper, { width: SCREEN_WIDTH }]}>
-          {/* Top Bar: Profile icon only in the top-right corner in the exact same position */}
-          <View style={styles.topRightProfileContainer}>
-            <TouchableOpacity
-              style={[styles.userAvatar, { backgroundColor: colors.primary }]}
-              onPress={() => setIsProfileOpen(true)}
-              activeOpacity={0.8}
-              accessibilityLabel="Open Profile"
-            >
-              <Text style={[styles.avatarText, { color: colors.buttonTextDark }]}>A</Text>
-            </TouchableOpacity>
-          </View>
+            {/* Top Bar: Profile icon only in the top-right corner in the exact same position */}
+            <View style={styles.topRightProfileContainer}>
+              <TouchableOpacity
+                style={[styles.userAvatar, { backgroundColor: colors.primary }]}
+                onPress={() => {
+                  VoiceService.triggerHaptic('light');
+                  if (onOpenProfile) {
+                    onOpenProfile();
+                  } else {
+                    setIsProfileOpen(true);
+                  }
+                }}
+                activeOpacity={0.8}
+                accessibilityLabel="Open Profile"
+              >
+                <Text style={[styles.avatarText, { color: colors.buttonTextDark }]}>A</Text>
+              </TouchableOpacity>
+            </View>
 
           <ScrollView
             style={styles.scrollWrapper}
