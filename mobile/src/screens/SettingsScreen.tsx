@@ -1,7 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  Settings,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Switch,
+  Animated,
+  Modal,
+} from 'react-native';
+import {
   Cpu,
   Volume2,
   ShieldCheck,
@@ -9,17 +17,16 @@ import {
   Globe,
   HardDrive,
   Terminal,
-  Palette,
   Bus,
   Trash2,
   Sparkles,
-  Smartphone,
   Moon,
   Sun,
-  Info,
-  ChevronRight,
+  ChevronDown,
+  X,
+  User,
 } from 'lucide-react-native';
-import { ThemeColors, useTheme, ThemeManager } from '../theme/colors';
+import { ThemeColors, useTheme } from '../theme/colors';
 import { AIModelConfig } from '../types';
 import { VoiceService } from '../services/voiceService';
 
@@ -67,7 +74,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { colors, themeName, setTheme } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const [currentModel, setCurrentModel] = useState<AIModelConfig>(selectedModel);
-  const currentTheme = themeName;
+  const [isModelPickerOpen, setIsModelPickerOpen] = useState(false);
+  const isDark = themeName === 'midnight';
+
   const [transitMode, setTransitMode] = useState(VoiceService.isMutedMode());
   const [autoSpeech, setAutoSpeech] = useState(!VoiceService.isMutedMode());
   const [speechRate, setSpeechRate] = useState(1.0);
@@ -77,30 +86,71 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [cacheCleared, setCacheCleared] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const handleSelectTheme = (theme: 'midnight' | 'midnight-day') => {
-    setTheme(theme);
+  // Animated values for theme toggle icon
+  const rotateAnim = useRef(new Animated.Value(isDark ? 0 : 1)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.timing(rotateAnim, {
+      toValue: themeName === 'midnight' ? 0 : 1,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  }, [themeName]);
+
+  const handleToggleTheme = () => {
     VoiceService.triggerHaptic('medium');
-    const label =
-      theme === 'midnight'
-        ? 'Midnight Navy (Dark Version)'
-        : 'Midnight Navy (Day Version)';
+    const nextTheme = themeName === 'midnight' ? 'midnight-day' : 'midnight';
+
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.75,
+        duration: 90,
+        useNativeDriver: true,
+      }),
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 4,
+          tension: 60,
+          useNativeDriver: true,
+        }),
+        Animated.timing(rotateAnim, {
+          toValue: nextTheme === 'midnight' ? 0 : 1,
+          duration: 320,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+
+    setTheme(nextTheme);
+    const label = nextTheme === 'midnight' ? 'Dark Mode' : 'Day Mode';
     setStatusMessage(`Theme switched to ${label}`);
     setTimeout(() => setStatusMessage(null), 2500);
   };
+
+  const themeIconRotate = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   const handleToggleTransitMode = (val: boolean) => {
     setTransitMode(val);
     VoiceService.setMuted(val);
     setAutoSpeech(!val);
     VoiceService.triggerHaptic('medium');
-    setStatusMessage(val ? 'Transit Mode Enabled: Audio speech silenced for public commute' : 'Transit Mode Disabled: Voice audio enabled');
+    setStatusMessage(
+      val
+        ? 'Transit Mode Enabled: Audio speech silenced for public commute'
+        : 'Transit Mode Disabled: Voice audio enabled'
+    );
     setTimeout(() => setStatusMessage(null), 3000);
   };
 
   const handleTestVoice = () => {
     VoiceService.triggerHaptic('medium');
     if (transitMode) {
-      setStatusMessage("Transit Mode is active (Voice muted). Disable Transit Mode to test speaker.");
+      setStatusMessage('Transit Mode is active (Voice muted). Disable Transit Mode to test speaker.');
       setTimeout(() => setStatusMessage(null), 3000);
       return;
     }
@@ -108,22 +158,67 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       `Hello! I am MIRAS, your autonomous personal voice assistant. Speech synthesis is functioning at one hundred percent efficiency.`,
       { rate: speechRate }
     );
-    setStatusMessage("Playing audio test voice sample...");
+    setStatusMessage('Playing audio test voice sample...');
     setTimeout(() => setStatusMessage(null), 3000);
   };
 
   const handleClearCache = () => {
     VoiceService.triggerHaptic('medium');
     setCacheCleared(true);
-    setStatusMessage("24.8 MB audio & memory cache cleared");
+    setStatusMessage('24.8 MB audio & memory cache cleared');
     setTimeout(() => setStatusMessage(null), 3000);
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+      {/* Sleek Top Header with Animated Theme Toggle and Profile Avatar Button */}
       <View style={styles.header}>
-        <Text style={styles.title}>System Settings</Text>
-        <Text style={styles.subtitle}>Theme Aesthetics, Model Routing & System Audio</Text>
+        <View style={styles.headerTopRow}>
+          <View style={styles.headerTextGroup}>
+            <Text style={styles.title}>System Settings</Text>
+            <Text style={styles.subtitle}>Appearance, AI Models & System Audio</Text>
+          </View>
+
+          <View style={styles.headerActionsGroup}>
+            {/* Animated Sun / Moon Theme Toggle */}
+            <TouchableOpacity
+              style={styles.themeToggleBtn}
+              onPress={handleToggleTheme}
+              activeOpacity={0.7}
+              accessibilityLabel="Toggle Theme Mode"
+            >
+              <Animated.View
+                style={{
+                  transform: [
+                    { rotate: themeIconRotate },
+                    { scale: scaleAnim },
+                  ],
+                }}
+              >
+                {isDark ? (
+                  <Moon size={18} color="#0CB981" />
+                ) : (
+                  <Sun size={18} color="#D97706" />
+                )}
+              </Animated.View>
+            </TouchableOpacity>
+
+            {/* Profile Avatar Icon beside Page Title */}
+            {onOpenProfile && (
+              <TouchableOpacity
+                style={styles.profileHeaderBtn}
+                onPress={() => {
+                  VoiceService.triggerHaptic('medium');
+                  onOpenProfile();
+                }}
+                activeOpacity={0.7}
+                accessibilityLabel="Navigate to Profile"
+              >
+                <Text style={styles.profileHeaderAvatarText}>A</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
 
         {statusMessage && (
           <View style={styles.toast}>
@@ -133,102 +228,46 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         )}
       </View>
 
-      {/* Quick Jump to Full Profile Page */}
-      {onOpenProfile && (
+      {/* 1. ACTIVE AI FOUNDATION MODEL: Compact Single-Row Selector (Opens Picker Modal) */}
+      <View style={styles.section}>
+        <View style={styles.sectionTitleRow}>
+          <Cpu size={16} color={colors.primary} />
+          <Text style={styles.sectionTitle}>ACTIVE AI FOUNDATION MODEL</Text>
+        </View>
+
         <TouchableOpacity
-          style={styles.profileJumpCard}
+          style={styles.activeModelSelectorCard}
           onPress={() => {
-            VoiceService.triggerHaptic('medium');
-            onOpenProfile();
+            VoiceService.triggerHaptic('light');
+            setIsModelPickerOpen(true);
           }}
           activeOpacity={0.8}
         >
-          <View style={styles.profileAvatarCircle}>
-            <Text style={styles.profileAvatarText}>A</Text>
-          </View>
-          <View style={styles.profileInfoCol}>
-            <View style={styles.profileNameRow}>
-              <Text style={styles.profileName}>Alex Morgan</Text>
-              <View style={styles.profileTierBadge}>
-                <Text style={styles.profileTierBadgeText}>WORKSPACE PRO</Text>
-              </View>
+          <View style={styles.activeModelLeft}>
+            <View style={styles.modelIconSquircle}>
+              <Cpu size={18} color={colors.primary} />
             </View>
-            <Text style={styles.profileEmail}>alex.morgan@workspace.io • Manage Profile & Accounts</Text>
+            <View style={styles.activeModelTextCol}>
+              <View style={styles.activeModelNameRow}>
+                <Text style={styles.activeModelName}>{currentModel.name}</Text>
+                <View style={styles.activeBadge}>
+                  <Text style={styles.activeBadgeText}>{currentModel.badge}</Text>
+                </View>
+              </View>
+              <Text style={styles.activeModelSub}>
+                {currentModel.provider} • {currentModel.speed} • {currentModel.reasoning} reasoning
+              </Text>
+            </View>
           </View>
-          <ChevronRight size={18} color={colors.primary} />
+
+          <View style={styles.switchModelAction}>
+            <Text style={styles.switchModelText}>Switch</Text>
+            <ChevronDown size={16} color={colors.primary} />
+          </View>
         </TouchableOpacity>
-      )}
-
-      {/* 1. APPLICATION THEME SELECTION */}
-      <View style={styles.section}>
-        <View style={styles.sectionTitleRow}>
-          <Palette size={16} color={colors.primary} />
-          <Text style={styles.sectionTitle}>APPLICATION THEME</Text>
-        </View>
-        <Text style={styles.sectionDesc}>
-          Select your visual appearance mode: Midnight Navy Dark Version or Midnight Navy Day Version.
-        </Text>
-
-        <View style={styles.themeOptionsRow}>
-          {/* Midnight Navy (Dark Version - Default) */}
-          <TouchableOpacity
-            style={[
-              styles.themeCard,
-              currentTheme === 'midnight' && styles.themeCardActiveMidnight,
-            ]}
-            onPress={() => handleSelectTheme('midnight')}
-            activeOpacity={0.8}
-          >
-            <View style={styles.themeCardHeader}>
-              <Moon size={15} color="#0CB981" />
-              <Text style={styles.themeCardTitle}>Midnight Navy (Dark)</Text>
-              <View style={styles.defaultPill}>
-                <Text style={styles.defaultPillText}>DEFAULT</Text>
-              </View>
-              {currentTheme === 'midnight' && (
-                <Check size={14} color="#0CB981" style={{ marginLeft: 'auto' }} />
-              )}
-            </View>
-            <Text style={styles.themeCardSub}>Dark Navy, Deep Charcoal, Emerald & Indigo (Primary)</Text>
-            <View style={styles.swatchRow}>
-              <View style={[styles.swatch, { backgroundColor: '#0F131E' }]} />
-              <View style={[styles.swatch, { backgroundColor: '#1C202B' }]} />
-              <View style={[styles.swatch, { backgroundColor: '#0CB981' }]} />
-              <View style={[styles.swatch, { backgroundColor: '#202068' }]} />
-            </View>
-          </TouchableOpacity>
-
-          {/* Midnight Navy (Day Version) */}
-          <TouchableOpacity
-            style={[
-              styles.themeCard,
-              currentTheme === 'midnight-day' && styles.themeCardActiveDay,
-            ]}
-            onPress={() => handleSelectTheme('midnight-day')}
-            activeOpacity={0.8}
-          >
-            <View style={styles.themeCardHeader}>
-              <Sun size={15} color="#059669" />
-              <Text style={styles.themeCardTitle}>Midnight Navy (Day)</Text>
-              <View style={[styles.defaultPill, { backgroundColor: 'rgba(5, 150, 105, 0.12)', borderColor: 'rgba(5, 150, 105, 0.25)' }]}>
-                <Text style={[styles.defaultPillText, { color: '#059669' }]}>LIGHT</Text>
-              </View>
-              {currentTheme === 'midnight-day' && (
-                <Check size={14} color="#059669" style={{ marginLeft: 'auto' }} />
-              )}
-            </View>
-            <Text style={styles.themeCardSub}>Porcelain Slate, Crisp White, Emerald & Indigo</Text>
-            <View style={styles.swatchRow}>
-              <View style={[styles.swatch, { backgroundColor: '#F8FAFC' }]} />
-              <View style={[styles.swatch, { backgroundColor: '#FFFFFF' }]} />
-              <View style={[styles.swatch, { backgroundColor: '#059669' }]} />
-              <View style={[styles.swatch, { backgroundColor: '#EEF2FF' }]} />
-            </View>
-          </TouchableOpacity>
-        </View>
       </View>
 
-      {/* 2. VOICE, AUDIO & COMMUTE / TRANSIT MODE (Item 7) */}
+      {/* 2. VOICE, AUDIO & COMMUTE / TRANSIT MODE */}
       <View style={styles.section}>
         <View style={styles.sectionTitleRow}>
           <Volume2 size={16} color={colors.secondary} />
@@ -299,56 +338,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         </TouchableOpacity>
       </View>
 
-      {/* 3. ACTIVE AI FOUNDATION MODEL */}
-      <View style={styles.section}>
-        <View style={styles.sectionTitleRow}>
-          <Cpu size={16} color={colors.primary} />
-          <Text style={styles.sectionTitle}>ACTIVE AI FOUNDATION MODEL</Text>
-        </View>
-
-        {AI_MODELS.map(model => {
-          const isSelected = currentModel.id === model.id;
-          return (
-            <TouchableOpacity
-              key={model.id}
-              activeOpacity={0.8}
-              style={[styles.modelCard, isSelected && styles.modelCardSelected]}
-              onPress={() => {
-                VoiceService.triggerHaptic('light');
-                setCurrentModel(model);
-                if (onSelectModel) onSelectModel(model);
-              }}
-            >
-              <View style={styles.modelHeaderRow}>
-                <View style={styles.nameBlock}>
-                  <Text style={styles.modelName}>{model.name}</Text>
-                  <Text style={styles.providerName}>{model.provider}</Text>
-                </View>
-                <View style={[styles.badge, isSelected && styles.badgeSelected]}>
-                  <Text style={[styles.badgeText, isSelected && styles.badgeTextSelected]}>
-                    {model.badge}
-                  </Text>
-                </View>
-              </View>
-
-              <Text style={styles.modelDesc}>{model.description}</Text>
-
-              <View style={styles.modelMetaRow}>
-                <Text style={styles.metaText}>⚡ Latency: {model.speed}</Text>
-                <Text style={styles.metaText}>🧠 Reasoning: {model.reasoning}</Text>
-                {isSelected && (
-                  <View style={styles.selectedIndicator}>
-                    <Check size={14} color={colors.primary} />
-                    <Text style={styles.selectedIndicatorText}>ACTIVE</Text>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* 4. AUTONOMOUS CHORES & BACKGROUND EXECUTION */}
+      {/* 3. AUTONOMOUS CHORES & BACKGROUND EXECUTION */}
       <View style={styles.section}>
         <View style={styles.sectionTitleRow}>
           <Sparkles size={16} color={colors.primary} />
@@ -395,7 +385,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         </View>
       </View>
 
-      {/* 5. STORAGE & CACHE */}
+      {/* 4. STORAGE & CACHE */}
       <View style={styles.section}>
         <View style={styles.sectionTitleRow}>
           <HardDrive size={16} color={colors.textMuted} />
@@ -411,7 +401,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         </TouchableOpacity>
       </View>
 
-      {/* 6. MCP TOOL SERVERS HEALTH */}
+      {/* 5. MCP TOOL SERVERS HEALTH */}
       <View style={styles.section}>
         <View style={styles.sectionTitleRow}>
           <ShieldCheck size={16} color={colors.success} />
@@ -448,405 +438,609 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         </View>
       </View>
 
-      {/* 7. APP INFO FOOTER */}
+      {/* APP INFO FOOTER */}
       <View style={styles.footerInfo}>
         <Text style={styles.footerVersion}>MIRAS Autonomous Assistant • v2.4.0</Text>
         <Text style={styles.footerSub}>Privacy Guaranteed • End-to-End Encrypted</Text>
       </View>
+
+      {/* AI Foundation Model Picker Modal (Modern Web App Style) */}
+      <Modal
+        visible={isModelPickerOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsModelPickerOpen(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsModelPickerOpen(false)}
+        >
+          <View
+            style={styles.modalContentSheet}
+            onStartShouldSetResponder={() => true}
+          >
+            {/* Sheet Handle */}
+            <View style={styles.sheetHandle} />
+
+            <View style={styles.modalHeaderRow}>
+              <View style={styles.modalHeaderTextCol}>
+                <Text style={styles.modalTitle}>Choose AI Model</Text>
+                <Text style={styles.modalSubtitle}>
+                  Select routing foundation model for MIRAS reasoning
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.modalCloseBtn}
+                onPress={() => setIsModelPickerOpen(false)}
+                activeOpacity={0.7}
+              >
+                <X size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalModelList}>
+              {AI_MODELS.map(model => {
+                const isSelected = currentModel.id === model.id;
+                return (
+                  <TouchableOpacity
+                    key={model.id}
+                    style={[
+                      styles.modalModelCard,
+                      isSelected && styles.modalModelCardSelected,
+                    ]}
+                    onPress={() => {
+                      VoiceService.triggerHaptic('medium');
+                      setCurrentModel(model);
+                      if (onSelectModel) onSelectModel(model);
+                      setIsModelPickerOpen(false);
+                      setStatusMessage(`Switched to ${model.name}`);
+                      setTimeout(() => setStatusMessage(null), 2500);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.modalModelTopRow}>
+                      <View style={styles.modalModelNameGroup}>
+                        <Text
+                          style={[
+                            styles.modalModelName,
+                            isSelected && { color: colors.primary },
+                          ]}
+                        >
+                          {model.name}
+                        </Text>
+                        <View
+                          style={[
+                            styles.modalBadge,
+                            isSelected && styles.modalBadgeSelected,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.modalBadgeText,
+                              isSelected && { color: colors.primary },
+                            ]}
+                          >
+                            {model.badge}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Selection Radio Indicator */}
+                      <View
+                        style={[
+                          styles.radioOuterCircle,
+                          isSelected && styles.radioOuterCircleActive,
+                        ]}
+                      >
+                        {isSelected && <View style={styles.radioInnerDot} />}
+                      </View>
+                    </View>
+
+                    <Text style={styles.modalModelDescription}>
+                      {model.description}
+                    </Text>
+
+                    <View style={styles.modalModelMetaRow}>
+                      <Text style={styles.modalMetaItem}>
+                        Provider: {model.provider}
+                      </Text>
+                      <Text style={styles.modalMetaDivider}>•</Text>
+                      <Text style={styles.modalMetaItem}>⚡ {model.speed}</Text>
+                      <Text style={styles.modalMetaDivider}>•</Text>
+                      <Text style={styles.modalMetaItem}>🧠 {model.reasoning}</Text>
+                      {isSelected && (
+                        <View style={styles.modalActiveIndicator}>
+                          <Check size={12} color={colors.primary} />
+                          <Text style={styles.modalActiveIndicatorText}>CURRENT</Text>
+                        </View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </ScrollView>
   );
 };
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  contentContainer: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  header: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 12.5,
-    color: colors.textSecondary,
-    marginTop: 4,
-    lineHeight: 18,
-  },
-  toast: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    marginTop: 12,
-  },
-  toastText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.buttonTextDark,
-  },
-  profileJumpCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.cardBg,
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    marginBottom: 20,
-  },
-  profileAvatarCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  profileAvatarText: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.buttonTextDark,
-  },
-  profileInfoCol: {
-    flex: 1,
-  },
-  profileNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  profileName: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  profileTierBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    paddingHorizontal: 6,
-    paddingVertical: 1.5,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.35)',
-  },
-  profileTierBadgeText: {
-    fontSize: 8.5,
-    fontWeight: '800',
-    color: colors.primary,
-    letterSpacing: 0.3,
-  },
-  profileEmail: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: colors.textMuted,
-    letterSpacing: 1,
-  },
-  sectionDesc: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: 12,
-    lineHeight: 16,
-  },
-  themeOptionsRow: {
-    gap: 10,
-  },
-  themeCard: {
-    backgroundColor: colors.cardBg,
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorderSubtle,
-  },
-  themeCardActiveMidnight: {
-    borderColor: '#0CB981',
-    backgroundColor: 'rgba(12, 185, 129, 0.08)',
-  },
-  themeCardActiveDay: {
-    borderColor: '#059669',
-    backgroundColor: 'rgba(5, 150, 105, 0.08)',
-  },
-  themeCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
-  defaultPill: {
-    backgroundColor: 'rgba(12, 185, 129, 0.15)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(12, 185, 129, 0.3)',
-  },
-  defaultPillText: {
-    fontSize: 8.5,
-    fontWeight: '800',
-    color: '#0CB981',
-    letterSpacing: 0.5,
-  },
-  themeCardTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  themeCardSub: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginBottom: 10,
-  },
-  swatchRow: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  swatch: {
-    width: 22,
-    height: 12,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  transitHighlightRow: {
-    backgroundColor: colors.surfaceCard,
-    borderColor: colors.primaryBorder,
-    borderWidth: 1,
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 10,
-  },
-  settingItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surfaceBorderSubtle,
-  },
-  settingTextCol: {
-    flex: 1,
-    paddingRight: 14,
-  },
-  settingLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  settingSubtext: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginTop: 2,
-    lineHeight: 15,
-  },
-  rateSelectorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surfaceBorderSubtle,
-  },
-  rateButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  rateBtn: {
-    backgroundColor: colors.cardBgElevated,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorderSubtle,
-  },
-  rateBtnActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.surfaceCard,
-  },
-  rateBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.textMuted,
-  },
-  rateBtnTextActive: {
-    color: colors.primary,
-  },
-  testVoiceBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.cardBg,
-    borderRadius: 12,
-    paddingVertical: 12,
-    marginTop: 14,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorderSubtle,
-  },
-  testVoiceBtnText: {
-    fontSize: 12.5,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  modelCard: {
-    backgroundColor: colors.cardBg,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorderSubtle,
-  },
-  modelCardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.surfaceCard,
-  },
-  modelHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 6,
-  },
-  nameBlock: {
-    flex: 1,
-  },
-  modelName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  providerName: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginTop: 1,
-  },
-  badge: {
-    backgroundColor: colors.cardBgElevated,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  badgeSelected: {
-    backgroundColor: colors.surfaceCard,
-  },
-  badgeText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: colors.textMuted,
-    letterSpacing: 0.5,
-  },
-  badgeTextSelected: {
-    color: colors.primary,
-  },
-  modelDesc: {
-    fontSize: 11.5,
-    color: colors.textSecondary,
-    lineHeight: 16,
-    marginBottom: 10,
-  },
-  modelMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  metaText: {
-    fontSize: 10.5,
-    color: colors.textMuted,
-  },
-  selectedIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginLeft: 'auto',
-  },
-  selectedIndicatorText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.primary,
-  },
-  clearCacheBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: colors.cardBg,
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorderSubtle,
-  },
-  clearCacheText: {
-    fontSize: 12.5,
-    color: colors.textPrimary,
-    flex: 1,
-  },
-  mcpList: {
-    backgroundColor: colors.cardBg,
-    borderRadius: 14,
-    padding: 6,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorderSubtle,
-  },
-  mcpItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    padding: 10,
-  },
-  mcpTextCol: {
-    flex: 1,
-  },
-  mcpName: {
-    fontSize: 12.5,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  mcpSub: {
-    fontSize: 10.5,
-    color: colors.textSecondary,
-    marginTop: 1,
-  },
-  mcpStatus: {
-    fontSize: 9.5,
-    fontWeight: '800',
-    color: colors.success,
-    letterSpacing: 0.5,
-  },
-  footerInfo: {
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
-    gap: 4,
-  },
-  footerVersion: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.textMuted,
-  },
-  footerSub: {
-    fontSize: 10,
-    color: colors.textSecondary,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    contentContainer: {
+      padding: 16,
+      paddingBottom: 40,
+    },
+    header: {
+      marginBottom: 20,
+    },
+    headerTopRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    headerTextGroup: {
+      flex: 1,
+      paddingRight: 12,
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: '800',
+      color: colors.textPrimary,
+      letterSpacing: -0.4,
+    },
+    subtitle: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 3,
+      lineHeight: 16,
+    },
+    headerActionsGroup: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    themeToggleBtn: {
+      width: 38,
+      height: 38,
+      borderRadius: 12,
+      backgroundColor: colors.cardBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+    },
+    profileHeaderBtn: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+    },
+    profileHeaderAvatarText: {
+      fontSize: 16,
+      fontWeight: '800',
+      color: colors.buttonTextDark,
+    },
+    toast: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: colors.primary,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 10,
+      marginTop: 12,
+    },
+    toastText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.buttonTextDark,
+    },
+    section: {
+      marginBottom: 22,
+    },
+    sectionTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 10,
+    },
+    sectionTitle: {
+      fontSize: 11,
+      fontWeight: '800',
+      color: colors.textMuted,
+      letterSpacing: 1,
+    },
+
+    // Active AI Model Selector Card (Clean Minimal Row)
+    activeModelSelectorCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.cardBg,
+      borderRadius: 14,
+      padding: 13,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+    },
+    activeModelLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 11,
+      flex: 1,
+      minWidth: 0,
+      marginRight: 10,
+    },
+    modelIconSquircle: {
+      width: 38,
+      height: 38,
+      borderRadius: 10,
+      backgroundColor: 'rgba(16, 185, 129, 0.12)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: 'rgba(16, 185, 129, 0.25)',
+      flexShrink: 0,
+    },
+    activeModelTextCol: {
+      flex: 1,
+      minWidth: 0,
+    },
+    activeModelNameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 7,
+      flexWrap: 'wrap',
+    },
+    activeModelName: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    activeBadge: {
+      backgroundColor: 'rgba(16, 185, 129, 0.12)',
+      paddingHorizontal: 6,
+      paddingVertical: 1.5,
+      borderRadius: 5,
+      borderWidth: 1,
+      borderColor: 'rgba(16, 185, 129, 0.25)',
+    },
+    activeBadgeText: {
+      fontSize: 8.5,
+      fontWeight: '800',
+      color: colors.primary,
+      letterSpacing: 0.3,
+    },
+    activeModelSub: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    switchModelAction: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3,
+      paddingHorizontal: 10,
+      paddingVertical: 5.5,
+      borderRadius: 8,
+      backgroundColor: 'rgba(16, 185, 129, 0.08)',
+      borderWidth: 1,
+      borderColor: 'rgba(16, 185, 129, 0.2)',
+      flexShrink: 0,
+    },
+    switchModelText: {
+      fontSize: 11.5,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+
+    // Modal Sheet Styles for Model Picker
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.65)',
+      justifyContent: 'flex-end',
+    },
+    modalContentSheet: {
+      backgroundColor: colors.cardBg,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingHorizontal: 18,
+      paddingTop: 12,
+      paddingBottom: 36,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+    },
+    sheetHandle: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.surfaceBorder,
+      alignSelf: 'center',
+      marginBottom: 14,
+    },
+    modalHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      marginBottom: 16,
+    },
+    modalHeaderTextCol: {
+      flex: 1,
+      paddingRight: 12,
+    },
+    modalTitle: {
+      fontSize: 17,
+      fontWeight: '800',
+      color: colors.textPrimary,
+    },
+    modalSubtitle: {
+      fontSize: 11.5,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    modalCloseBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    modalModelList: {
+      gap: 10,
+    },
+    modalModelCard: {
+      backgroundColor: colors.cardBgElevated,
+      borderRadius: 14,
+      padding: 13,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorderSubtle,
+    },
+    modalModelCardSelected: {
+      borderColor: colors.primary,
+      backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    },
+    modalModelTopRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 4,
+    },
+    modalModelNameGroup: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 7,
+      flex: 1,
+      flexWrap: 'wrap',
+    },
+    modalModelName: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    modalBadge: {
+      backgroundColor: colors.cardBg,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 5,
+    },
+    modalBadgeSelected: {
+      backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    },
+    modalBadgeText: {
+      fontSize: 8.5,
+      fontWeight: '800',
+      color: colors.textMuted,
+      letterSpacing: 0.3,
+    },
+    radioOuterCircle: {
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      borderWidth: 1.5,
+      borderColor: colors.textMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    radioOuterCircleActive: {
+      borderColor: colors.primary,
+    },
+    radioInnerDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.primary,
+    },
+    modalModelDescription: {
+      fontSize: 11.5,
+      color: colors.textSecondary,
+      lineHeight: 16,
+      marginBottom: 8,
+    },
+    modalModelMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      flexWrap: 'wrap',
+    },
+    modalMetaItem: {
+      fontSize: 10.5,
+      color: colors.textMuted,
+    },
+    modalMetaDivider: {
+      fontSize: 10,
+      color: colors.textMuted,
+    },
+    modalActiveIndicator: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3,
+      marginLeft: 'auto',
+    },
+    modalActiveIndicatorText: {
+      fontSize: 9.5,
+      fontWeight: '800',
+      color: colors.primary,
+      letterSpacing: 0.3,
+    },
+
+    // Audio & Transit Settings
+    transitHighlightRow: {
+      backgroundColor: colors.surfaceCard,
+      borderColor: colors.primaryBorder,
+      borderWidth: 1,
+      borderRadius: 14,
+      padding: 12,
+      marginBottom: 10,
+    },
+    settingItemRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.surfaceBorderSubtle,
+    },
+    settingTextCol: {
+      flex: 1,
+      paddingRight: 14,
+    },
+    settingLabel: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    settingSubtext: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 2,
+      lineHeight: 15,
+    },
+    rateSelectorRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.surfaceBorderSubtle,
+    },
+    rateButtons: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    rateBtn: {
+      backgroundColor: colors.cardBgElevated,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorderSubtle,
+    },
+    rateBtnActive: {
+      borderColor: colors.primary,
+      backgroundColor: colors.surfaceCard,
+    },
+    rateBtnText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.textMuted,
+    },
+    rateBtnTextActive: {
+      color: colors.primary,
+    },
+    testVoiceBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: colors.cardBg,
+      borderRadius: 12,
+      paddingVertical: 12,
+      marginTop: 14,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorderSubtle,
+    },
+    testVoiceBtnText: {
+      fontSize: 12.5,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+
+    // Storage & Memory
+    clearCacheBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      backgroundColor: colors.cardBg,
+      borderRadius: 12,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorderSubtle,
+    },
+    clearCacheText: {
+      fontSize: 12.5,
+      color: colors.textPrimary,
+      flex: 1,
+    },
+
+    // MCP Servers List
+    mcpList: {
+      backgroundColor: colors.cardBg,
+      borderRadius: 14,
+      padding: 6,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorderSubtle,
+    },
+    mcpItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      padding: 10,
+    },
+    mcpTextCol: {
+      flex: 1,
+    },
+    mcpName: {
+      fontSize: 12.5,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    mcpSub: {
+      fontSize: 10.5,
+      color: colors.textSecondary,
+      marginTop: 1,
+    },
+    mcpStatus: {
+      fontSize: 9.5,
+      fontWeight: '800',
+      color: colors.success,
+      letterSpacing: 0.5,
+    },
+    footerInfo: {
+      alignItems: 'center',
+      marginTop: 20,
+      marginBottom: 20,
+      gap: 4,
+    },
+    footerVersion: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.textMuted,
+    },
+    footerSub: {
+      fontSize: 10,
+      color: colors.textSecondary,
+    },
+  });

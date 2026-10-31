@@ -3,14 +3,13 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import {
   ArrowLeft,
   Settings,
-  ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Shield,
   Smartphone,
   Lock,
   CheckCircle2,
-  Sparkles,
-  CreditCard,
-  User,
+  Layers,
 } from 'lucide-react-native';
 import { ThemeColors, useTheme } from '../theme/colors';
 import { VoiceService } from '../services/voiceService';
@@ -27,6 +26,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onOpenSett
   const styles = React.useMemo(() => createStyles(colors), [colors]);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  // Single option container for platforms (collapsed by default, click to open)
+  const [isPlatformsExpanded, setIsPlatformsExpanded] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -35,7 +36,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onOpenSett
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
-      {/* Top Navigation Bar with Back Button */}
+      {/* Top Navigation Bar with Back Button and Settings Icon */}
       <View style={styles.topBar}>
         {onBack ? (
           <TouchableOpacity
@@ -64,6 +65,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onOpenSett
               onOpenSettings();
             }}
             activeOpacity={0.7}
+            accessibilityLabel="Open Settings"
           >
             <Settings size={18} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -80,7 +82,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onOpenSett
         </View>
       )}
 
-      {/* User Identity & Membership Card */}
+      {/* 1. USER IDENTITY & MEMBERSHIP CARD */}
       <View style={styles.identityCard}>
         <View style={styles.identityHeader}>
           <View style={styles.avatarCircle}>
@@ -114,37 +116,62 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onOpenSett
         </View>
       </View>
 
-      {/* Quick Link to Application Settings */}
-      {onOpenSettings && (
-        <TouchableOpacity
-          style={styles.settingsRedirectCard}
-          onPress={() => {
-            VoiceService.triggerHaptic('medium');
-            onOpenSettings();
-          }}
-          activeOpacity={0.8}
-        >
-          <View style={styles.settingsIconCircle}>
-            <Settings size={18} color={colors.primary} />
-          </View>
-          <View style={styles.settingsTextCol}>
-            <Text style={styles.settingsTitle}>Application Settings</Text>
-            <Text style={styles.settingsSubtitle}>Theme, Voice Audio, AI Models & System Chores</Text>
-          </View>
-          <ChevronRight size={18} color={colors.primary} />
-        </TouchableOpacity>
-      )}
-
-      {/* Main Section: Connect Accounts & Services (Category-Based Layout) */}
+      {/* 2. CONNECT PLATFORMS OPTION: Single Clean Card (Click to Reveal Categories) */}
       <View style={styles.sectionContainer}>
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionHeaderTitle}>CONNECT ACCOUNTS & SERVICES</Text>
+          <Text style={styles.sectionHeaderTitle}>ACCOUNT INTEGRATIONS</Text>
         </View>
 
-        <ConnectAccountsSection onShowToast={showToast} />
+        <View style={styles.platformsOptionWrapper}>
+          <TouchableOpacity
+            style={[
+              styles.platformsTriggerCard,
+              isPlatformsExpanded && styles.platformsTriggerCardActive,
+            ]}
+            onPress={() => {
+              VoiceService.triggerHaptic('light');
+              setIsPlatformsExpanded(!isPlatformsExpanded);
+            }}
+            activeOpacity={0.8}
+          >
+            <View style={styles.platformsTriggerLeft}>
+              <View style={styles.platformsIconBox}>
+                <Layers size={18} color={colors.primary} />
+              </View>
+              <View style={styles.platformsTextCol}>
+                <View style={styles.platformsTitleRow}>
+                  <Text style={styles.platformsTitle}>Connect Platforms</Text>
+                  <View style={styles.platformsBadge}>
+                    <Text style={styles.platformsBadgeText}>4 CATEGORIES</Text>
+                  </View>
+                </View>
+                <Text style={styles.platformsSubtitle}>
+                  {isPlatformsExpanded
+                    ? 'Click to collapse category options'
+                    : 'Click to view categories & link platform accounts'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.chevronBox}>
+              {isPlatformsExpanded ? (
+                <ChevronUp size={18} color={colors.primary} />
+              ) : (
+                <ChevronDown size={18} color={colors.textSecondary} />
+              )}
+            </View>
+          </TouchableOpacity>
+
+          {/* Expanded Categories Container */}
+          {isPlatformsExpanded && (
+            <View style={styles.platformsExpandedBody}>
+              <ConnectAccountsSection onShowToast={showToast} />
+            </View>
+          )}
+        </View>
       </View>
 
-      {/* Security & 2-Factor Authentication Section */}
+      {/* 3. SECURITY & 2-FACTOR AUTHENTICATION */}
       <View style={styles.securitySection}>
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionHeaderTitle}>SECURITY & 2-FACTOR AUTHENTICATION</Text>
@@ -181,11 +208,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onOpenSett
         </View>
       </View>
 
-      {/* Device Vault Encryption Guarantee Box */}
+      {/* Local Device Vault Guarantee Box */}
       <View style={styles.guaranteeBox}>
         <Shield size={16} color={colors.primary} />
         <Text style={styles.guaranteeText}>
-          All personal credentials and 2FA SMS security codes remain strictly encrypted inside your local device vault.
+          All personal credentials, API keys and 2FA authentication tokens remain strictly encrypted inside your local device vault.
         </Text>
       </View>
     </ScrollView>
@@ -239,12 +266,6 @@ const createStyles = (colors: ThemeColors) =>
       fontWeight: '800',
       color: colors.primary,
       letterSpacing: 0.8,
-    },
-    topBarTitle: {
-      fontSize: 16,
-      fontWeight: '800',
-      color: colors.textPrimary,
-      letterSpacing: 0.2,
     },
     settingsShortcutBtn: {
       width: 36,
@@ -360,41 +381,10 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: 10.5,
       color: colors.textMuted,
     },
-    settingsRedirectCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      backgroundColor: colors.cardBg,
-      borderRadius: 14,
-      padding: 14,
-      borderWidth: 1,
-      borderColor: colors.surfaceBorder,
-    },
-    settingsIconCircle: {
-      width: 36,
-      height: 36,
-      borderRadius: 10,
-      backgroundColor: 'rgba(16, 185, 129, 0.12)',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 1,
-      borderColor: 'rgba(16, 185, 129, 0.25)',
-    },
-    settingsTextCol: {
-      flex: 1,
-    },
-    settingsTitle: {
-      fontSize: 13.5,
-      fontWeight: '700',
-      color: colors.textPrimary,
-    },
-    settingsSubtitle: {
-      fontSize: 11,
-      color: colors.textSecondary,
-      marginTop: 2,
-    },
+
+    // Connect Platforms Option Container
     sectionContainer: {
-      gap: 10,
+      gap: 8,
     },
     sectionHeaderRow: {
       paddingHorizontal: 2,
@@ -405,8 +395,89 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.textMuted,
       letterSpacing: 0.8,
     },
+    platformsOptionWrapper: {
+      gap: 12,
+    },
+    platformsTriggerCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.cardBg,
+      borderRadius: 16,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+    },
+    platformsTriggerCardActive: {
+      borderColor: colors.primary,
+      backgroundColor: 'rgba(16, 185, 129, 0.05)',
+    },
+    platformsTriggerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      flex: 1,
+      minWidth: 0,
+      marginRight: 10,
+    },
+    platformsIconBox: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: 'rgba(16, 185, 129, 0.12)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: 'rgba(16, 185, 129, 0.25)',
+      flexShrink: 0,
+    },
+    platformsTextCol: {
+      flex: 1,
+      minWidth: 0,
+    },
+    platformsTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    platformsTitle: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    platformsBadge: {
+      backgroundColor: 'rgba(16, 185, 129, 0.12)',
+      paddingHorizontal: 6,
+      paddingVertical: 1.5,
+      borderRadius: 5,
+      borderWidth: 1,
+      borderColor: 'rgba(16, 185, 129, 0.25)',
+    },
+    platformsBadgeText: {
+      fontSize: 8.5,
+      fontWeight: '800',
+      color: colors.primary,
+      letterSpacing: 0.3,
+    },
+    platformsSubtitle: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    chevronBox: {
+      width: 24,
+      height: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    platformsExpandedBody: {
+      paddingTop: 4,
+    },
+
+    // Security Section
     securitySection: {
-      gap: 10,
+      gap: 8,
     },
     securityCard: {
       backgroundColor: colors.cardBg,
