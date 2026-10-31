@@ -1547,7 +1547,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice, onOpenP
   );
 };
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors) => {
+  const isDay = colors.name === 'midnight-day';
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -1614,10 +1616,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderColor: colors.userBubbleBorder,
   },
   miraBubble: {
-    backgroundColor: colors.cardBg,
+    backgroundColor: isDay ? '#FFFFFF' : colors.cardBg,
     borderBottomLeftRadius: 4,
     borderWidth: 1,
-    borderColor: colors.surfaceBorderSubtle,
+    borderColor: isDay ? '#E2E8F0' : colors.surfaceBorderSubtle,
   },
   msgText: {
     fontSize: 13.5,
@@ -1639,7 +1641,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: 6,
     marginTop: 8,
     borderTopWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: isDay ? '#E2E8F0' : 'rgba(255, 255, 255, 0.06)',
   },
   expandToggleText: {
     fontSize: 11.5,
@@ -1653,12 +1655,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
   // Electricity bill card
   billCard: {
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: isDay ? '#F1F5F9' : 'rgba(0, 0, 0, 0.3)',
     borderRadius: 14,
     padding: 12,
     marginTop: 10,
     borderWidth: 1,
-    borderColor: colors.surfaceBorderSubtle,
+    borderColor: isDay ? '#E2E8F0' : colors.surfaceBorderSubtle,
     overflow: 'hidden',
   },
   billHeader: {
@@ -1700,9 +1702,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   diffBox: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: isDay ? '#FFFFFF' : 'rgba(255, 255, 255, 0.03)',
     borderRadius: 10,
     padding: 8,
+    borderWidth: isDay ? 1 : 0,
+    borderColor: '#E2E8F0',
   },
   diffLabel: {
     fontSize: 10,
@@ -1711,7 +1715,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   diffValueGreen: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#00FFA3',
+    color: isDay ? '#059669' : '#00FFA3',
     marginVertical: 2,
   },
   diffValueNeutral: {
@@ -1725,11 +1729,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.textSecondary,
   },
   whyHigherInline: {
-    backgroundColor: 'rgba(0, 229, 153, 0.05)',
+    backgroundColor: isDay ? '#ECFDF5' : 'rgba(0, 229, 153, 0.05)',
     borderRadius: 8,
     padding: 8,
     borderWidth: 1,
-    borderColor: 'rgba(0, 229, 153, 0.12)',
+    borderColor: isDay ? '#A7F3D0' : 'rgba(0, 229, 153, 0.12)',
   },
   whyHigherInlineTitle: {
     fontSize: 10.5,
@@ -1773,12 +1777,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
   // Email List Card (Item 10a & 10c)
   emailListCard: {
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: isDay ? '#F1F5F9' : 'rgba(0, 0, 0, 0.35)',
     borderRadius: 14,
     padding: 12,
     marginTop: 10,
     borderWidth: 1,
-    borderColor: colors.surfaceBorderSubtle,
+    borderColor: isDay ? '#E2E8F0' : colors.surfaceBorderSubtle,
     gap: 10,
   },
   emailListHeader: {
@@ -1787,7 +1791,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: 8,
     paddingBottom: 6,
     borderBottomWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: isDay ? '#E2E8F0' : 'rgba(255, 255, 255, 0.06)',
   },
   emailListTitle: {
     fontSize: 13,
@@ -1795,11 +1799,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.textPrimary,
   },
   emailItemRow: {
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    backgroundColor: isDay ? '#FFFFFF' : 'rgba(255, 255, 255, 0.02)',
     borderRadius: 10,
     padding: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: isDay ? '#E2E8F0' : 'rgba(255, 255, 255, 0.05)',
     gap: 4,
   },
   emailItemTop: {
@@ -1850,11 +1854,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.primary,
   },
   emailExpandedBox: {
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: isDay ? '#F8FAFC' : 'rgba(0, 0, 0, 0.4)',
     borderRadius: 8,
     padding: 10,
     marginTop: 6,
     gap: 6,
+    borderWidth: isDay ? 1 : 0,
+    borderColor: '#E2E8F0',
   },
   emailFullBodyLabel: {
     fontSize: 9,
@@ -1882,12 +1888,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
   // Flight Card (Item 10c)
   flightCard: {
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: isDay ? '#F1F5F9' : 'rgba(0, 0, 0, 0.35)',
     borderRadius: 14,
     padding: 12,
     marginTop: 10,
     borderWidth: 1,
-    borderColor: colors.surfaceBorderSubtle,
+    borderColor: isDay ? '#E2E8F0' : colors.surfaceBorderSubtle,
     overflow: 'hidden',
   },
   flightHeader: {
@@ -1935,9 +1941,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   flightGridCol: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: isDay ? '#FFFFFF' : 'rgba(255, 255, 255, 0.03)',
     borderRadius: 8,
     padding: 8,
+    borderWidth: isDay ? 1 : 0,
+    borderColor: '#E2E8F0',
     gap: 2,
   },
   flightGridLabel: {
@@ -1955,9 +1963,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.textSecondary,
   },
   baggageNoteBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: isDay ? '#FFFFFF' : 'rgba(255, 255, 255, 0.03)',
     borderRadius: 8,
     padding: 8,
+    borderWidth: isDay ? 1 : 0,
+    borderColor: '#E2E8F0',
   },
   baggageNoteText: {
     fontSize: 11,
@@ -1986,12 +1996,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
   // Scanned Camera Result Card (Item 3c)
   scanResultCard: {
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: isDay ? '#F1F5F9' : 'rgba(0, 0, 0, 0.4)',
     borderRadius: 14,
     padding: 12,
     marginTop: 10,
     borderWidth: 1,
-    borderColor: 'rgba(0, 229, 153, 0.3)',
+    borderColor: isDay ? 'rgba(5, 150, 105, 0.25)' : 'rgba(0, 229, 153, 0.3)',
     gap: 8,
   },
   scanResultHeader: {
@@ -2081,19 +2091,19 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: isDay ? '#F1F5F9' : 'rgba(0, 0, 0, 0.35)',
     borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 10,
     borderWidth: 1,
-    borderColor: colors.surfaceBorderSubtle,
+    borderColor: isDay ? '#E2E8F0' : colors.surfaceBorderSubtle,
     boxSizing: 'border-box' as any,
   },
   attachIcon: {
     width: 28,
     height: 28,
     borderRadius: 6,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: isDay ? '#FEE2E2' : 'rgba(239, 68, 68, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -2101,7 +2111,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   pdfText: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#EF4444',
+    color: isDay ? '#DC2626' : '#EF4444',
   },
   attachCol: {
     flex: 1,
@@ -2942,3 +2952,4 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: 'rgba(0, 229, 153, 0.1)',
   },
 });
+};
