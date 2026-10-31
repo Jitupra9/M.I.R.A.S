@@ -249,12 +249,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </View>
             <View style={styles.activeModelTextCol}>
               <View style={styles.activeModelNameRow}>
-                <Text style={styles.activeModelName}>{currentModel.name}</Text>
+                <Text style={styles.activeModelName} numberOfLines={1}>
+                  {currentModel.name}
+                </Text>
                 <View style={styles.activeBadge}>
                   <Text style={styles.activeBadgeText}>{currentModel.badge}</Text>
                 </View>
               </View>
-              <Text style={styles.activeModelSub}>
+              <Text style={styles.activeModelSub} numberOfLines={1}>
                 {currentModel.provider} • {currentModel.speed} • {currentModel.reasoning} reasoning
               </Text>
             </View>
@@ -262,7 +264,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
           <View style={styles.switchModelAction}>
             <Text style={styles.switchModelText}>Switch</Text>
-            <ChevronDown size={16} color={colors.primary} />
+            <ChevronDown size={15} color={colors.primary} />
           </View>
         </TouchableOpacity>
       </View>
@@ -574,7 +576,7 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: colors.background,
     },
     contentContainer: {
-      padding: 16,
+      padding: 14,
       paddingBottom: 40,
     },
     header: {
@@ -701,13 +703,14 @@ const createStyles = (colors: ThemeColors) =>
     activeModelNameRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 7,
-      flexWrap: 'wrap',
+      gap: 6,
+      flexWrap: 'nowrap',
     },
     activeModelName: {
-      fontSize: 14,
+      fontSize: 13.5,
       fontWeight: '700',
       color: colors.textPrimary,
+      flexShrink: 1,
     },
     activeBadge: {
       backgroundColor: 'rgba(16, 185, 129, 0.12)',

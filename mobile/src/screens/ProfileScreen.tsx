@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
 import {
   ArrowLeft,
   Settings,
@@ -10,6 +16,11 @@ import {
   Lock,
   CheckCircle2,
   Layers,
+  Laptop,
+  Download,
+  RefreshCw,
+  ChevronRight,
+  LogOut,
 } from 'lucide-react-native';
 import { ThemeColors, useTheme } from '../theme/colors';
 import { VoiceService } from '../services/voiceService';
@@ -28,14 +39,35 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onOpenSett
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   // Single option container for platforms (collapsed by default, click to open)
   const [isPlatformsExpanded, setIsPlatformsExpanded] = useState(false);
+  const [otherSessionsTerminated, setOtherSessionsTerminated] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  const handleExportData = () => {
+    VoiceService.triggerHaptic('medium');
+    showToast('Exporting encrypted personal archive (JSON)...');
+  };
+
+  const handleResetMemory = () => {
+    VoiceService.triggerHaptic('medium');
+    showToast('Agent contextual recall memory cleared');
+  };
+
+  const handleTerminateOtherSessions = () => {
+    VoiceService.triggerHaptic('medium');
+    setOtherSessionsTerminated(true);
+    showToast('Signed out of 1 other device session');
+  };
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Top Navigation Bar with Back Button and Settings Icon */}
       <View style={styles.topBar}>
         {onBack ? (
@@ -47,7 +79,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onOpenSett
             }}
             activeOpacity={0.7}
           >
-            <ArrowLeft size={18} color={colors.primary} />
+            <ArrowLeft size={17} color={colors.primary} />
             <Text style={styles.backBtnText}>Back</Text>
           </TouchableOpacity>
         ) : (
@@ -82,7 +114,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onOpenSett
         </View>
       )}
 
-      {/* 1. USER IDENTITY & MEMBERSHIP CARD */}
+      {/* 1. USER PERSONAL IDENTITY & OWNER CARD */}
       <View style={styles.identityCard}>
         <View style={styles.identityHeader}>
           <View style={styles.avatarCircle}>
@@ -90,33 +122,33 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onOpenSett
           </View>
           <View style={styles.identityTextCol}>
             <View style={styles.nameRow}>
-              <Text style={styles.userName}>Alex Morgan</Text>
+              <Text style={styles.userName} numberOfLines={1}>Alex Morgan</Text>
               <View style={styles.activeTierPill}>
-                <Text style={styles.activeTierPillText}>WORKSPACE PRO</Text>
+                <Text style={styles.activeTierPillText}>OWNER</Text>
               </View>
             </View>
-            <Text style={styles.userEmail}>alex.morgan@workspace.io</Text>
+            <Text style={styles.userEmail} numberOfLines={1}>alex.morgan@workspace.io</Text>
           </View>
         </View>
 
         <View style={styles.membershipDivider} />
 
         <View style={styles.workspaceInfo}>
-          <Text style={styles.workspaceTitle}>Alex's MIRAS Workspace</Text>
+          <Text style={styles.workspaceTitle}>Personal Assistant Vault</Text>
           <Text style={styles.workspaceDesc}>
-            Unlimited multi-agent reasoning, local offline speech processing & encrypted device vault.
+            Private autonomous agent with local offline speech processing & encrypted device vault.
           </Text>
           <View style={styles.metaRow}>
-            <Text style={styles.metaItem}>Member since: Oct 2024</Text>
+            <Text style={styles.metaItem}>Created: Oct 2024</Text>
             <Text style={styles.metaItem}>•</Text>
-            <Text style={styles.metaItem}>ID: #USR-98421</Text>
+            <Text style={styles.metaItem}>Key: #USR-98421</Text>
             <Text style={styles.metaItem}>•</Text>
             <Text style={[styles.metaItem, { color: colors.primary }]}>Active</Text>
           </View>
         </View>
       </View>
 
-      {/* 2. CONNECT PLATFORMS OPTION: Single Clean Card (Click to Reveal Categories) */}
+      {/* 2. ACCOUNT INTEGRATIONS ("Connect Platforms") - Responsive & Aligned for Small Devices */}
       <View style={styles.sectionContainer}>
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionHeaderTitle}>ACCOUNT INTEGRATIONS</Text>
@@ -134,31 +166,32 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onOpenSett
             }}
             activeOpacity={0.8}
           >
-            <View style={styles.platformsTriggerLeft}>
-              <View style={styles.platformsIconBox}>
-                <Layers size={18} color={colors.primary} />
-              </View>
-              <View style={styles.platformsTextCol}>
-                <View style={styles.platformsTitleRow}>
-                  <Text style={styles.platformsTitle}>Connect Platforms</Text>
-                  <View style={styles.platformsBadge}>
-                    <Text style={styles.platformsBadgeText}>4 CATEGORIES</Text>
-                  </View>
-                </View>
-                <Text style={styles.platformsSubtitle}>
-                  {isPlatformsExpanded
-                    ? 'Click to collapse category options'
-                    : 'Click to view categories & link platform accounts'}
-                </Text>
-              </View>
+            <View style={styles.platformsIconBox}>
+              <Layers size={18} color={colors.primary} />
             </View>
 
-            <View style={styles.chevronBox}>
-              {isPlatformsExpanded ? (
-                <ChevronUp size={18} color={colors.primary} />
-              ) : (
-                <ChevronDown size={18} color={colors.textSecondary} />
-              )}
+            <View style={styles.platformsTextCol}>
+              <Text style={styles.platformsTitle} numberOfLines={1}>
+                Connect Platforms
+              </Text>
+              <Text style={styles.platformsSubtitle} numberOfLines={1}>
+                {isPlatformsExpanded
+                  ? 'Tap to collapse categories'
+                  : 'Link Google, Slack, GitHub & APIs'}
+              </Text>
+            </View>
+
+            <View style={styles.platformsTriggerRight}>
+              <View style={styles.platformsBadge}>
+                <Text style={styles.platformsBadgeText}>4 CATEGORIES</Text>
+              </View>
+              <View style={styles.chevronBox}>
+                {isPlatformsExpanded ? (
+                  <ChevronUp size={16} color={colors.primary} />
+                ) : (
+                  <ChevronDown size={16} color={colors.textSecondary} />
+                )}
+              </View>
             </View>
           </TouchableOpacity>
 
@@ -171,7 +204,59 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onOpenSett
         </View>
       </View>
 
-      {/* 3. SECURITY & 2-FACTOR AUTHENTICATION */}
+      {/* 3. ACTIVE SESSIONS & CONNECTED DEVICES */}
+      <View style={styles.sectionContainer}>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionHeaderTitle}>CONNECTED DEVICES & SESSIONS</Text>
+        </View>
+
+        <View style={styles.sessionsCard}>
+          {/* Current Device Session */}
+          <View style={styles.sessionRow}>
+            <View style={styles.sessionIconBox}>
+              <Smartphone size={16} color={colors.primary} />
+            </View>
+            <View style={styles.sessionTextCol}>
+              <Text style={styles.sessionDeviceName}>Pixel 8 Pro (This Phone)</Text>
+              <Text style={styles.sessionDeviceSub}>Android 14 • MIRAS App v2.4 • Active Now</Text>
+            </View>
+            <View style={styles.sessionCurrentBadge}>
+              <Text style={styles.sessionCurrentBadgeText}>THIS DEVICE</Text>
+            </View>
+          </View>
+
+          {!otherSessionsTerminated && (
+            <>
+              <View style={styles.sessionDivider} />
+
+              {/* Second Device Session */}
+              <View style={styles.sessionRow}>
+                <View style={[styles.sessionIconBox, { backgroundColor: 'rgba(6, 182, 212, 0.1)' }]}>
+                  <Laptop size={16} color="#06B6D4" />
+                </View>
+                <View style={styles.sessionTextCol}>
+                  <Text style={styles.sessionDeviceName}>MacBook Pro 16"</Text>
+                  <Text style={styles.sessionDeviceSub}>macOS Sonoma • Chrome Gateway • 18m ago</Text>
+                </View>
+                <View style={[styles.sessionCurrentBadge, { backgroundColor: 'rgba(6, 182, 212, 0.12)', borderColor: 'rgba(6, 182, 212, 0.25)' }]}>
+                  <Text style={[styles.sessionCurrentBadgeText, { color: '#06B6D4' }]}>ONLINE</Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.terminateSessionsBtn}
+                onPress={handleTerminateOtherSessions}
+                activeOpacity={0.8}
+              >
+                <LogOut size={13} color={colors.textSecondary} />
+                <Text style={styles.terminateSessionsBtnText}>Sign Out All Other Sessions</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      </View>
+
+      {/* 4. SECURITY & 2-FACTOR AUTHENTICATION */}
       <View style={styles.securitySection}>
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionHeaderTitle}>SECURITY & 2-FACTOR AUTHENTICATION</Text>
@@ -208,6 +293,47 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onOpenSett
         </View>
       </View>
 
+      {/* 5. PERSONAL VAULT & PRIVACY CONTROLS */}
+      <View style={styles.sectionContainer}>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionHeaderTitle}>PERSONAL VAULT & PRIVACY</Text>
+        </View>
+
+        <View style={styles.privacyCard}>
+          <TouchableOpacity
+            style={styles.privacyOptionRow}
+            onPress={handleExportData}
+            activeOpacity={0.7}
+          >
+            <View style={styles.privacyIconBox}>
+              <Download size={15} color={colors.primary} />
+            </View>
+            <View style={styles.privacyTextCol}>
+              <Text style={styles.privacyTitle}>Backup & Export Vault</Text>
+              <Text style={styles.privacySub}>Download encrypted JSON backup of personal data & tasks</Text>
+            </View>
+            <ChevronRight size={15} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <View style={styles.privacyDivider} />
+
+          <TouchableOpacity
+            style={styles.privacyOptionRow}
+            onPress={handleResetMemory}
+            activeOpacity={0.7}
+          >
+            <View style={styles.privacyIconBox}>
+              <RefreshCw size={15} color={colors.warning} />
+            </View>
+            <View style={styles.privacyTextCol}>
+              <Text style={styles.privacyTitle}>Clear Assistant Recall Memory</Text>
+              <Text style={styles.privacySub}>Reset contextual agent memories while keeping platforms connected</Text>
+            </View>
+            <ChevronRight size={15} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       {/* Local Device Vault Guarantee Box */}
       <View style={styles.guaranteeBox}>
         <Shield size={16} color={colors.primary} />
@@ -230,7 +356,7 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: colors.background,
     },
     contentContainer: {
-      paddingHorizontal: 16,
+      paddingHorizontal: 14,
       paddingTop: 8,
       paddingBottom: 40,
       gap: 16,
@@ -239,14 +365,14 @@ const createStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingVertical: 10,
+      paddingVertical: 8,
       marginBottom: 2,
     },
     backBtn: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 5,
-      paddingVertical: 6,
+      gap: 4,
+      paddingVertical: 5,
       paddingHorizontal: 8,
       borderRadius: 8,
       backgroundColor: 'rgba(255, 255, 255, 0.04)',
@@ -295,10 +421,12 @@ const createStyles = (colors: ThemeColors) =>
       fontWeight: '700',
       color: colors.buttonTextDark,
     },
+
+    // Identity Card
     identityCard: {
       backgroundColor: colors.cardBg,
-      borderRadius: 18,
-      padding: 16,
+      borderRadius: 16,
+      padding: 14,
       borderWidth: 1,
       borderColor: colors.surfaceBorder,
     },
@@ -308,74 +436,79 @@ const createStyles = (colors: ThemeColors) =>
       gap: 12,
     },
     avatarCircle: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       backgroundColor: colors.primary,
       alignItems: 'center',
       justifyContent: 'center',
+      flexShrink: 0,
     },
     avatarInitial: {
-      fontSize: 20,
+      fontSize: 19,
       fontWeight: '800',
       color: colors.buttonTextDark,
     },
     identityTextCol: {
       flex: 1,
+      minWidth: 0,
     },
     nameRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
-      flexWrap: 'wrap',
+      gap: 6,
+      flexWrap: 'nowrap',
     },
     userName: {
-      fontSize: 17,
+      fontSize: 16,
       fontWeight: '800',
       color: colors.textPrimary,
+      flexShrink: 1,
     },
     activeTierPill: {
       backgroundColor: 'rgba(16, 185, 129, 0.15)',
-      paddingHorizontal: 7,
+      paddingHorizontal: 6,
       paddingVertical: 2,
-      borderRadius: 6,
+      borderRadius: 5,
       borderWidth: 1,
       borderColor: 'rgba(16, 185, 129, 0.35)',
+      flexShrink: 0,
     },
     activeTierPillText: {
-      fontSize: 9,
+      fontSize: 8.5,
       fontWeight: '800',
       color: colors.primary,
       letterSpacing: 0.4,
     },
     userEmail: {
-      fontSize: 12,
+      fontSize: 11.5,
       color: colors.textSecondary,
       marginTop: 2,
     },
     membershipDivider: {
       height: 1,
       backgroundColor: 'rgba(255, 255, 255, 0.05)',
-      marginVertical: 14,
+      marginVertical: 12,
     },
     workspaceInfo: {
       gap: 4,
     },
     workspaceTitle: {
-      fontSize: 14,
+      fontSize: 13.5,
       fontWeight: '700',
       color: colors.textPrimary,
     },
     workspaceDesc: {
-      fontSize: 11.5,
+      fontSize: 11,
       color: colors.textSecondary,
-      lineHeight: 16,
+      lineHeight: 15,
     },
     metaRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
-      marginTop: 6,
+      marginTop: 4,
+      flexWrap: 'wrap',
     },
     metaItem: {
       fontSize: 10.5,
@@ -396,34 +529,26 @@ const createStyles = (colors: ThemeColors) =>
       letterSpacing: 0.8,
     },
     platformsOptionWrapper: {
-      gap: 12,
+      gap: 10,
     },
     platformsTriggerCard: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
       backgroundColor: colors.cardBg,
-      borderRadius: 16,
-      padding: 14,
+      borderRadius: 14,
+      padding: 12,
       borderWidth: 1,
       borderColor: colors.surfaceBorder,
+      gap: 10,
     },
     platformsTriggerCardActive: {
       borderColor: colors.primary,
       backgroundColor: 'rgba(16, 185, 129, 0.05)',
     },
-    platformsTriggerLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      flex: 1,
-      minWidth: 0,
-      marginRight: 10,
-    },
     platformsIconBox: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
+      width: 36,
+      height: 36,
+      borderRadius: 10,
       backgroundColor: 'rgba(16, 185, 129, 0.12)',
       alignItems: 'center',
       justifyContent: 'center',
@@ -435,15 +560,21 @@ const createStyles = (colors: ThemeColors) =>
       flex: 1,
       minWidth: 0,
     },
-    platformsTitleRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
     platformsTitle: {
-      fontSize: 14,
+      fontSize: 13.5,
       fontWeight: '700',
       color: colors.textPrimary,
+    },
+    platformsSubtitle: {
+      fontSize: 10.5,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    platformsTriggerRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      flexShrink: 0,
     },
     platformsBadge: {
       backgroundColor: 'rgba(16, 185, 129, 0.12)',
@@ -459,20 +590,88 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.primary,
       letterSpacing: 0.3,
     },
-    platformsSubtitle: {
-      fontSize: 11,
-      color: colors.textSecondary,
-      marginTop: 2,
-    },
     chevronBox: {
-      width: 24,
-      height: 24,
+      width: 20,
+      height: 20,
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0,
     },
     platformsExpandedBody: {
       paddingTop: 4,
+    },
+
+    // Active Sessions Card
+    sessionsCard: {
+      backgroundColor: colors.cardBg,
+      borderRadius: 16,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+      gap: 10,
+    },
+    sessionRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    sessionIconBox: {
+      width: 34,
+      height: 34,
+      borderRadius: 9,
+      backgroundColor: 'rgba(16, 185, 129, 0.12)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    sessionTextCol: {
+      flex: 1,
+      minWidth: 0,
+    },
+    sessionDeviceName: {
+      fontSize: 12.5,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    sessionDeviceSub: {
+      fontSize: 10.5,
+      color: colors.textSecondary,
+      marginTop: 1,
+    },
+    sessionCurrentBadge: {
+      paddingHorizontal: 6,
+      paddingVertical: 1.5,
+      borderRadius: 5,
+      backgroundColor: 'rgba(16, 185, 129, 0.12)',
+      borderWidth: 1,
+      borderColor: 'rgba(16, 185, 129, 0.25)',
+      flexShrink: 0,
+    },
+    sessionCurrentBadgeText: {
+      fontSize: 8.5,
+      fontWeight: '800',
+      color: colors.primary,
+    },
+    sessionDivider: {
+      height: 1,
+      backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    },
+    terminateSessionsBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 5,
+      paddingVertical: 7,
+      borderRadius: 8,
+      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+      borderWidth: 1,
+      borderColor: colors.surfaceBorderSubtle,
+      marginTop: 2,
+    },
+    terminateSessionsBtnText: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.textSecondary,
     },
 
     // Security Section
@@ -499,17 +698,19 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: 'rgba(16, 185, 129, 0.1)',
       alignItems: 'center',
       justifyContent: 'center',
+      flexShrink: 0,
     },
     securityTextCol: {
       flex: 1,
+      minWidth: 0,
     },
     securityTitle: {
-      fontSize: 13,
+      fontSize: 12.5,
       fontWeight: '700',
       color: colors.textPrimary,
     },
     securitySub: {
-      fontSize: 11,
+      fontSize: 10.5,
       color: colors.textSecondary,
       marginTop: 1,
     },
@@ -520,9 +721,10 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: 'rgba(16, 185, 129, 0.12)',
       borderWidth: 1,
       borderColor: 'rgba(16, 185, 129, 0.3)',
+      flexShrink: 0,
     },
     securityPillText: {
-      fontSize: 10,
+      fontSize: 9.5,
       fontWeight: '800',
       color: colors.primary,
       letterSpacing: 0.4,
@@ -532,6 +734,51 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: 'rgba(255, 255, 255, 0.04)',
       marginVertical: 10,
     },
+
+    // Privacy & Data Controls
+    privacyCard: {
+      backgroundColor: colors.cardBg,
+      borderRadius: 16,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+    },
+    privacyOptionRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      paddingVertical: 4,
+    },
+    privacyIconBox: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      backgroundColor: 'rgba(255, 255, 255, 0.04)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    privacyTextCol: {
+      flex: 1,
+      minWidth: 0,
+    },
+    privacyTitle: {
+      fontSize: 12.5,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    privacySub: {
+      fontSize: 10.5,
+      color: colors.textSecondary,
+      marginTop: 1,
+    },
+    privacyDivider: {
+      height: 1,
+      backgroundColor: 'rgba(255, 255, 255, 0.04)',
+      marginVertical: 10,
+    },
+
+    // Guarantee Note
     guaranteeBox: {
       flexDirection: 'row',
       alignItems: 'center',
