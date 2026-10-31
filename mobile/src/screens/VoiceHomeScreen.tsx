@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import {
   X,
-  Keyboard,
   Send,
   Volume2,
   User,
@@ -133,7 +132,6 @@ export const VoiceHomeScreen: React.FC<VoiceHomeScreenProps> = ({
   const horizontalScrollRef = useRef<any>(null);
   const [currentPage, setCurrentPage] = useState<0 | 1>(0);
 
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAuthModalVisible, setIsAuthModalVisible] = useState(false);
   const [inputText, setInputText] = useState('');
@@ -217,7 +215,6 @@ export const VoiceHomeScreen: React.FC<VoiceHomeScreenProps> = ({
       ]);
       onSubmitQuery(query.trim());
       setInputText('');
-      setIsKeyboardOpen(false);
     }
   };
 
@@ -334,13 +331,8 @@ export const VoiceHomeScreen: React.FC<VoiceHomeScreenProps> = ({
               <Text style={styles.convHeaderSub}>Slide left or tap arrow to return</Text>
             </View>
 
-            <TouchableOpacity
-              style={styles.convKeyboardBtn}
-              onPress={() => setIsKeyboardOpen(true)}
-              activeOpacity={0.8}
-            >
-              <Keyboard size={18} color={colors.primary} />
-            </TouchableOpacity>
+            {/* Spacer to keep title centered */}
+            <View style={styles.convHeaderRightSpacer} />
           </View>
 
           {/* Conversation Feed */}
@@ -412,62 +404,38 @@ export const VoiceHomeScreen: React.FC<VoiceHomeScreenProps> = ({
             )}
           </ScrollView>
 
-          {/* Bottom Quick-Reply Bar on Page 1 */}
-          <View style={styles.convBottomBar}>
-            <TouchableOpacity
-              style={styles.convInputPlaceholderBtn}
-              onPress={() => setIsKeyboardOpen(true)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.convInputPlaceholderText}>Type a message to MIRAS...</Text>
-              <Send size={15} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
+          {/* Bottom Interactive TextInput Bar on Page 1 */}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            <View style={styles.convBottomBar}>
+              <View style={styles.convInputContainer}>
+                <TextInput
+                  style={styles.convTextInput}
+                  placeholder="Type a message to MIRAS..."
+                  placeholderTextColor={colors.textMuted}
+                  value={inputText}
+                  onChangeText={setInputText}
+                  onSubmitEditing={() => handleSendText()}
+                  returnKeyType="send"
+                />
+                <TouchableOpacity
+                  style={[styles.convSendBtn, !inputText.trim() && styles.convSendBtnDisabled]}
+                  onPress={() => handleSendText()}
+                  disabled={!inputText.trim()}
+                  activeOpacity={0.8}
+                  accessibilityLabel="Send message"
+                >
+                  <Send
+                    size={16}
+                    color={inputText.trim() ? colors.buttonTextDark : colors.textMuted}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
         </View>
       </ScrollView>
-
-      {/* Modal for typing message */}
-      <Modal
-        visible={isKeyboardOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setIsKeyboardOpen(false)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.modalBackdrop}
-        >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Type a message to MIRAS</Text>
-              <TouchableOpacity onPress={() => setIsKeyboardOpen(false)}>
-                <X size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            <TextInput
-              style={styles.modalInput}
-              placeholder="e.g. Check important emails, status of flight..."
-              placeholderTextColor={colors.textMuted}
-              value={inputText}
-              onChangeText={setInputText}
-              autoFocus
-              onSubmitEditing={() => handleSendText()}
-            />
-
-            <TouchableOpacity
-              style={[styles.modalSendBtn, !inputText.trim() && styles.modalSendBtnDisabled]}
-              onPress={() => handleSendText()}
-              disabled={!inputText.trim()}
-            >
-              <Send size={16} color={inputText.trim() ? colors.buttonTextDark : colors.textMuted} />
-              <Text style={[styles.modalSendBtnText, !inputText.trim() && styles.modalSendBtnTextDisabled]}>
-                Send
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
 
       {/* Profile & Settings Modal */}
       <ProfileModal visible={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
@@ -667,15 +635,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.textMuted,
     marginTop: 1,
   },
-  convKeyboardBtn: {
+  convHeaderRightSpacer: {
     width: 38,
     height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.cardBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
   },
   conversationFeed: {
     flex: 1,
@@ -759,81 +721,39 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   convBottomBar: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderTopWidth: 1,
     borderTopColor: colors.surfaceBorderSubtle,
     backgroundColor: colors.background,
   },
-  convInputPlaceholderBtn: {
+  convInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     backgroundColor: colors.cardBg,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: 16,
+    paddingLeft: 14,
+    paddingRight: 6,
+    paddingVertical: 5,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
+    minHeight: 46,
   },
-  convInputPlaceholderText: {
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-
-  // Modal styles
-  modalBackdrop: {
+  convTextInput: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.82)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: colors.cardBgElevated,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-    paddingBottom: 36,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 13.5,
     color: colors.textPrimary,
+    paddingVertical: Platform.OS === 'ios' ? 8 : 6,
+    paddingRight: 10,
   },
-  modalInput: {
-    backgroundColor: colors.cardBg,
-    borderRadius: 14,
-    padding: 14,
-    fontSize: 14,
-    color: colors.textPrimary,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorderSubtle,
-    marginBottom: 16,
-  },
-  modalSendBtn: {
-    flexDirection: 'row',
+  convSendBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.primary,
-    borderRadius: 14,
-    paddingVertical: 13,
   },
-  modalSendBtnDisabled: {
+  convSendBtnDisabled: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  modalSendBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.buttonTextDark,
-  },
-  modalSendBtnTextDisabled: {
-    color: colors.textMuted,
   },
 });

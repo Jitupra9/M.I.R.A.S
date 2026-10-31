@@ -1,6 +1,6 @@
 export const MIDNIGHT_THEME = {
   name: 'midnight' as const,
-  displayName: 'Midnight Navy (Emerald & Purple)',
+  displayName: 'Midnight Navy (Dark Version)',
   // Backgrounds: Dark navy and deep charcoal from reference
   background: '#0F131E',
   backgroundGradientStart: '#0F131E',
@@ -55,124 +55,67 @@ export const MIDNIGHT_THEME = {
   primaryBorder: 'rgba(12, 185, 129, 0.25)',
 };
 
-export const CYBER_THEME = {
-  name: 'cyber' as const,
-  displayName: 'Cyber Jarvis (Emerald)',
-  // Backgrounds (Deep Emerald Luxury Forest Dark Mode)
-  background: '#060E0A',
-  backgroundGradientStart: '#060E0A',
-  backgroundGradientEnd: '#0A1711',
-  cardBg: '#0D1A14',
-  cardBgElevated: '#12231B',
-  cardBgSubtle: '#09140F',
-  surfaceSubtle: 'rgba(0, 229, 153, 0.04)',
-  surfaceBorder: 'rgba(0, 229, 153, 0.16)',
-  surfaceBorderSubtle: 'rgba(255, 255, 255, 0.07)',
+export const MIDNIGHT_DAY_THEME = {
+  name: 'midnight-day' as const,
+  displayName: 'Midnight Navy (Day Version)',
+  // Backgrounds: Clean, crisp soft white and porcelain light slate
+  background: '#F8FAFC',
+  backgroundGradientStart: '#F8FAFC',
+  backgroundGradientEnd: '#EDF2F7',
+  cardBg: '#FFFFFF',
+  cardBgElevated: '#FFFFFF',
+  cardBgSubtle: '#F1F5F9',
+  surfaceSubtle: 'rgba(5, 150, 105, 0.05)',
+  surfaceBorder: 'rgba(15, 23, 42, 0.08)',
+  surfaceBorderSubtle: '#E2E8F0',
 
-  // Primary Mint & Emerald Glowing Accents
-  primary: '#00E599',       // Vibrant Mint Green
-  primaryGlow: 'rgba(0, 229, 153, 0.35)',
-  primaryDeep: '#059669',   // Deep Forest Emerald
-  primaryLight: '#34D399',
+  // Primary accents: Emerald Green tailored for light background contrast
+  primary: '#059669',          // Deep vivid Emerald Green
+  primaryGlow: 'rgba(5, 150, 105, 0.20)',
+  primaryDeep: '#047857',
+  primaryLight: '#10B981',
 
-  // Secondary Accents
-  secondary: '#10B981',
-  secondaryGlow: 'rgba(16, 185, 129, 0.25)',
-  ambientGreenGlow: 'rgba(0, 229, 153, 0.12)',
+  // Secondary accents: Indigo / Royal Purple
+  secondary: '#4F46E5',        // Royal Indigo
+  secondaryGlow: 'rgba(79, 70, 229, 0.20)',
+  ambientGreenGlow: 'rgba(5, 150, 105, 0.08)',
 
-  // Themed Accents
-  accentPurple: '#132A20',
-  accentPurpleLight: '#34D399',
-  accentPurpleBorder: 'rgba(0, 229, 153, 0.25)',
-  accentCharcoal: '#12231B',
-
-  // Status Colors
-  success: '#00E599',
-  successGlow: 'rgba(0, 229, 153, 0.25)',
-  warning: '#F59E0B',       // Warm Amber
-  warningGlow: 'rgba(245, 158, 11, 0.25)',
-  danger: '#EF4444',        // Soft Coral Red
-  dangerGlow: 'rgba(239, 68, 68, 0.3)',
-
-  // Typography
-  textPrimary: '#F1FDF6',   // Crisp clean white-mint
-  textSecondary: '#8CA496', // Gentle sage grey
-  textMuted: '#52695C',    // Subdued green-grey
-  textGreen: '#00E599',
-  textCyan: '#00E599',
-
-  // UI Navigation Elements
-  activeNav: '#00E599',
-  inactiveNav: '#52695C',
-  badgeBg: 'rgba(0, 229, 153, 0.12)',
-  buttonTextDark: '#05180F', // High contrast dark text on mint button
-  userBubbleBg: 'rgba(0, 229, 153, 0.15)',
-  userBubbleBorder: 'rgba(0, 229, 153, 0.25)',
-  surfaceCard: '#0D1A14',
-  primaryBorder: 'rgba(0, 229, 153, 0.25)',
-};
-
-export const CLAUDE_THEME = {
-  name: 'claude' as const,
-  displayName: 'Claude Warm (Terracotta)',
-  // Backgrounds (Deep Dark Espresso & Charcoal)
-  background: '#0D0C0A',
-  backgroundGradientStart: '#0D0C0A',
-  backgroundGradientEnd: '#141210',
-  cardBg: '#171512',
-  cardBgElevated: '#1F1C18',
-  cardBgSubtle: '#11100D',
-  surfaceSubtle: 'rgba(217, 119, 87, 0.06)',
-  surfaceBorder: 'rgba(217, 119, 87, 0.22)',
-  surfaceBorderSubtle: 'rgba(255, 255, 255, 0.07)',
-
-  // Primary Claude Signature Warm Terracotta
-  primary: '#D97757',       // Warm Terracotta
-  primaryGlow: 'rgba(217, 119, 87, 0.35)',
-  primaryDeep: '#B55A3C',
-  primaryLight: '#E89173',
-
-  // Secondary Accents
-  secondary: '#C66D4E',
-  secondaryGlow: 'rgba(198, 109, 78, 0.25)',
-  ambientGreenGlow: 'rgba(217, 119, 87, 0.12)',
-
-  // Themed Accents
-  accentPurple: '#2A1A14',
-  accentPurpleLight: '#E89173',
-  accentPurpleBorder: 'rgba(217, 119, 87, 0.25)',
-  accentCharcoal: '#1F1C18',
+  // Reference Purple & Charcoal specific tokens (Day Version)
+  accentPurple: '#EEF2FF',      // Soft pastel indigo container
+  accentPurpleLight: '#4338CA', // Indigo readable text
+  accentPurpleBorder: '#C7D2FE',
+  accentCharcoal: '#E2E8F0',    // Light slate button
 
   // Status Colors
-  success: '#38A169',
-  successGlow: 'rgba(56, 161, 105, 0.25)',
-  warning: '#E28743',
-  warningGlow: 'rgba(226, 135, 67, 0.25)',
-  danger: '#E53E3E',
-  dangerGlow: 'rgba(229, 62, 62, 0.3)',
+  success: '#059669',
+  successGlow: 'rgba(5, 150, 105, 0.20)',
+  warning: '#D97706',          // Warm Amber
+  warningGlow: 'rgba(217, 119, 6, 0.20)',
+  danger: '#DC2626',           // Crisp Red
+  dangerGlow: 'rgba(220, 38, 38, 0.20)',
 
-  // Typography
-  textPrimary: '#FDF8F5',   // Crisp clean cream text
-  textSecondary: '#A89E95', // Warm readable sand grey
-  textMuted: '#6B625A',    // Deep warm earthy grey
-  textGreen: '#D97757',
-  textCyan: '#D97757',
+  // Typography: Dark, crisp, high readability
+  textPrimary: '#0F172A',      // Slate 900
+  textSecondary: '#475569',    // Slate 600
+  textMuted: '#94A3B8',        // Slate 400
+  textGreen: '#059669',
+  textCyan: '#0D9488',
 
   // UI Navigation Elements
-  activeNav: '#D97757',
-  inactiveNav: '#6B625A',
-  badgeBg: 'rgba(217, 119, 87, 0.16)',
-  buttonTextDark: '#0D0C0A',
-  userBubbleBg: 'rgba(217, 119, 87, 0.18)',
-  userBubbleBorder: 'rgba(217, 119, 87, 0.3)',
-  surfaceCard: '#171512',
-  primaryBorder: 'rgba(217, 119, 87, 0.3)',
+  activeNav: '#059669',
+  inactiveNav: '#64748B',
+  badgeBg: 'rgba(5, 150, 105, 0.12)',
+  buttonTextDark: '#FFFFFF',   // White text on dark green button
+  userBubbleBg: 'rgba(5, 150, 105, 0.10)',
+  userBubbleBorder: 'rgba(5, 150, 105, 0.25)',
+  surfaceCard: '#FFFFFF',
+  primaryBorder: 'rgba(5, 150, 105, 0.25)',
 };
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Platform } from 'react-native';
 
-export type ThemeName = 'midnight' | 'cyber' | 'claude';
+export type ThemeName = 'midnight' | 'midnight-day';
 export type ThemeColors = Omit<typeof MIDNIGHT_THEME, 'name'> & { name: ThemeName };
 
 type ThemeListener = (themeName: ThemeName) => void;
@@ -183,14 +126,14 @@ const getSavedTheme = (): ThemeName => {
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
-      if (saved === 'midnight' || saved === 'cyber' || saved === 'claude') {
+      if (saved === 'midnight' || saved === 'midnight-day') {
         return saved;
       }
     } catch {
       // fallback
     }
   }
-  return 'midnight'; // Midnight Navy is default and primary
+  return 'midnight'; // Midnight Navy (Dark Version) is default and primary
 };
 
 const saveTheme = (name: ThemeName) => {
@@ -208,10 +151,8 @@ const listeners: ThemeListener[] = [];
 
 const getThemeObject = (name: ThemeName) => {
   switch (name) {
-    case 'claude':
-      return CLAUDE_THEME;
-    case 'cyber':
-      return CYBER_THEME;
+    case 'midnight-day':
+      return MIDNIGHT_DAY_THEME;
     case 'midnight':
     default:
       return MIDNIGHT_THEME;
@@ -234,9 +175,8 @@ export const ThemeManager = {
     listeners.forEach(fn => fn(name));
   },
   toggleTheme: () => {
-    // Cycles: midnight -> cyber -> claude -> midnight
-    const next: ThemeName =
-      activeThemeName === 'midnight' ? 'cyber' : activeThemeName === 'cyber' ? 'claude' : 'midnight';
+    // Cycles between Midnight Navy Dark & Midnight Navy Day
+    const next: ThemeName = activeThemeName === 'midnight' ? 'midnight-day' : 'midnight';
     ThemeManager.setTheme(next);
   },
   subscribe: (fn: ThemeListener) => {
@@ -251,9 +191,12 @@ export const ThemeManager = {
 export interface ThemeContextValue {
   themeName: ThemeName;
   colors: ThemeColors;
+  isDark: boolean;
+  isDay: boolean;
   isMidnight: boolean;
-  isCyber: boolean;
-  isClaude: boolean;
+  isMidnightDay: boolean;
+  isCyber?: boolean;
+  isClaude?: boolean;
   setTheme: (name: ThemeName) => void;
   toggleTheme: () => void;
 }
@@ -261,7 +204,10 @@ export interface ThemeContextValue {
 export const ThemeContext = createContext<ThemeContextValue>({
   themeName: 'midnight',
   colors: MIDNIGHT_THEME,
+  isDark: true,
+  isDay: false,
   isMidnight: true,
+  isMidnightDay: false,
   isCyber: false,
   isClaude: false,
   setTheme: () => {},
@@ -291,9 +237,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       value: {
         themeName,
         colors,
+        isDark: themeName === 'midnight',
+        isDay: themeName === 'midnight-day',
         isMidnight: themeName === 'midnight',
-        isCyber: themeName === 'cyber',
-        isClaude: themeName === 'claude',
+        isMidnightDay: themeName === 'midnight-day',
+        isCyber: false,
+        isClaude: false,
         setTheme: ThemeManager.setTheme,
         toggleTheme: ThemeManager.toggleTheme,
       },
@@ -310,9 +259,12 @@ export const useTheme = (): ThemeContextValue => {
     return {
       themeName: name,
       colors,
+      isDark: name === 'midnight',
+      isDay: name === 'midnight-day',
       isMidnight: name === 'midnight',
-      isCyber: name === 'cyber',
-      isClaude: name === 'claude',
+      isMidnightDay: name === 'midnight-day',
+      isCyber: false,
+      isClaude: false,
       setTheme: ThemeManager.setTheme,
       toggleTheme: ThemeManager.toggleTheme,
     };

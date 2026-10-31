@@ -133,7 +133,7 @@ function MainApp() {
 
   return (
     <View style={[styles.rootContainer, { backgroundColor: colors.background, paddingTop: Math.max(insets.top, 10) }]}>
-      <StatusBar style={themeName === 'claude' ? 'light' : 'light'} />
+      <StatusBar style={themeName === 'midnight-day' ? 'dark' : 'light'} />
 
       {/* Main Screen View with themeKey to force instant re-render on theme change */}
       <View key={themeName} style={[styles.screenWrapper, { backgroundColor: colors.background }]}>

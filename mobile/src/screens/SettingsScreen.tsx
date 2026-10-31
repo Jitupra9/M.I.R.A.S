@@ -15,6 +15,7 @@ import {
   Sparkles,
   Smartphone,
   Moon,
+  Sun,
   Info,
   ChevronRight,
 } from 'lucide-react-native';
@@ -76,15 +77,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [cacheCleared, setCacheCleared] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const handleSelectTheme = (themeName: 'midnight' | 'cyber' | 'claude') => {
-    setTheme(themeName);
+  const handleSelectTheme = (theme: 'midnight' | 'midnight-day') => {
+    setTheme(theme);
     VoiceService.triggerHaptic('medium');
     const label =
-      themeName === 'midnight'
-        ? 'Midnight Navy (Emerald & Purple)'
-        : themeName === 'cyber'
-        ? 'Cyber Jarvis'
-        : 'Claude Warm';
+      theme === 'midnight'
+        ? 'Midnight Navy (Dark Version)'
+        : 'Midnight Navy (Day Version)';
     setStatusMessage(`Theme switched to ${label}`);
     setTimeout(() => setStatusMessage(null), 2500);
   };
@@ -160,18 +159,18 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         </TouchableOpacity>
       )}
 
-      {/* 1. APPLICATION THEME SELECTION (Item 8) */}
+      {/* 1. APPLICATION THEME SELECTION */}
       <View style={styles.section}>
         <View style={styles.sectionTitleRow}>
           <Palette size={16} color={colors.primary} />
           <Text style={styles.sectionTitle}>APPLICATION THEME</Text>
         </View>
         <Text style={styles.sectionDesc}>
-          Choose your interface aesthetic. Default is Midnight Navy, or switch to Cyber Jarvis or Claude Warm.
+          Select your visual appearance mode: Midnight Navy Dark Version or Midnight Navy Day Version.
         </Text>
 
         <View style={styles.themeOptionsRow}>
-          {/* Midnight Navy (Primary / Default) */}
+          {/* Midnight Navy (Dark Version - Default) */}
           <TouchableOpacity
             style={[
               styles.themeCard,
@@ -181,8 +180,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             activeOpacity={0.8}
           >
             <View style={styles.themeCardHeader}>
-              <View style={styles.midnightBadgeDot} />
-              <Text style={styles.themeCardTitle}>Midnight Navy</Text>
+              <Moon size={15} color="#0CB981" />
+              <Text style={styles.themeCardTitle}>Midnight Navy (Dark)</Text>
               <View style={styles.defaultPill}>
                 <Text style={styles.defaultPillText}>DEFAULT</Text>
               </View>
@@ -190,7 +189,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <Check size={14} color="#0CB981" style={{ marginLeft: 'auto' }} />
               )}
             </View>
-            <Text style={styles.themeCardSub}>Dark Navy, Deep Charcoal, Emerald & Purple (Primary)</Text>
+            <Text style={styles.themeCardSub}>Dark Navy, Deep Charcoal, Emerald & Indigo (Primary)</Text>
             <View style={styles.swatchRow}>
               <View style={[styles.swatch, { backgroundColor: '#0F131E' }]} />
               <View style={[styles.swatch, { backgroundColor: '#1C202B' }]} />
@@ -199,51 +198,31 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </View>
           </TouchableOpacity>
 
-          {/* Cyber Jarvis */}
+          {/* Midnight Navy (Day Version) */}
           <TouchableOpacity
             style={[
               styles.themeCard,
-              currentTheme === 'cyber' && styles.themeCardActiveCyber,
+              currentTheme === 'midnight-day' && styles.themeCardActiveDay,
             ]}
-            onPress={() => handleSelectTheme('cyber')}
+            onPress={() => handleSelectTheme('midnight-day')}
             activeOpacity={0.8}
           >
             <View style={styles.themeCardHeader}>
-              <View style={styles.cyberBadgeDot} />
-              <Text style={styles.themeCardTitle}>Cyber Jarvis</Text>
-              {currentTheme === 'cyber' && (
-                <Check size={14} color="#00FFA3" style={{ marginLeft: 'auto' }} />
+              <Sun size={15} color="#059669" />
+              <Text style={styles.themeCardTitle}>Midnight Navy (Day)</Text>
+              <View style={[styles.defaultPill, { backgroundColor: 'rgba(5, 150, 105, 0.12)', borderColor: 'rgba(5, 150, 105, 0.25)' }]}>
+                <Text style={[styles.defaultPillText, { color: '#059669' }]}>LIGHT</Text>
+              </View>
+              {currentTheme === 'midnight-day' && (
+                <Check size={14} color="#059669" style={{ marginLeft: 'auto' }} />
               )}
             </View>
-            <Text style={styles.themeCardSub}>Neon Emerald & Deep Forest Black</Text>
+            <Text style={styles.themeCardSub}>Porcelain Slate, Crisp White, Emerald & Indigo</Text>
             <View style={styles.swatchRow}>
-              <View style={[styles.swatch, { backgroundColor: '#060E0A' }]} />
-              <View style={[styles.swatch, { backgroundColor: '#0D1A14' }]} />
-              <View style={[styles.swatch, { backgroundColor: '#00E599' }]} />
-            </View>
-          </TouchableOpacity>
-
-          {/* Claude Warm */}
-          <TouchableOpacity
-            style={[
-              styles.themeCard,
-              currentTheme === 'claude' && styles.themeCardActiveClaude,
-            ]}
-            onPress={() => handleSelectTheme('claude')}
-            activeOpacity={0.8}
-          >
-            <View style={styles.themeCardHeader}>
-              <View style={styles.claudeBadgeDot} />
-              <Text style={styles.themeCardTitle}>Claude Warm</Text>
-              {currentTheme === 'claude' && (
-                <Check size={14} color="#D97757" style={{ marginLeft: 'auto' }} />
-              )}
-            </View>
-            <Text style={styles.themeCardSub}>Warm Terracotta & Sand Charcoal</Text>
-            <View style={styles.swatchRow}>
-              <View style={[styles.swatch, { backgroundColor: '#0D0C0A' }]} />
-              <View style={[styles.swatch, { backgroundColor: '#171512' }]} />
-              <View style={[styles.swatch, { backgroundColor: '#D97757' }]} />
+              <View style={[styles.swatch, { backgroundColor: '#F8FAFC' }]} />
+              <View style={[styles.swatch, { backgroundColor: '#FFFFFF' }]} />
+              <View style={[styles.swatch, { backgroundColor: '#059669' }]} />
+              <View style={[styles.swatch, { backgroundColor: '#EEF2FF' }]} />
             </View>
           </TouchableOpacity>
         </View>
@@ -608,25 +587,15 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderColor: '#0CB981',
     backgroundColor: 'rgba(12, 185, 129, 0.08)',
   },
-  themeCardActiveCyber: {
-    borderColor: '#00FFA3',
-    backgroundColor: 'rgba(0, 255, 163, 0.05)',
-  },
-  themeCardActiveClaude: {
-    borderColor: '#D97757',
-    backgroundColor: 'rgba(217, 119, 87, 0.06)',
+  themeCardActiveDay: {
+    borderColor: '#059669',
+    backgroundColor: 'rgba(5, 150, 105, 0.08)',
   },
   themeCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     marginBottom: 4,
-  },
-  midnightBadgeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#0CB981',
   },
   defaultPill: {
     backgroundColor: 'rgba(12, 185, 129, 0.15)',
@@ -641,18 +610,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: '800',
     color: '#0CB981',
     letterSpacing: 0.5,
-  },
-  cyberBadgeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#00FFA3',
-  },
-  claudeBadgeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#D97757',
   },
   themeCardTitle: {
     fontSize: 14,

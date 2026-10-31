@@ -1024,6 +1024,11 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice, onOpenP
       {/* Attachment Options Sheet (+ Menu) (Item 3b & 3c) */}
       <Modal visible={isAttachmentSheetOpen} transparent animationType="slide" onRequestClose={() => setIsAttachmentSheetOpen(false)}>
         <View style={styles.modalBackdrop}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setIsAttachmentSheetOpen(false)}
+          />
           <View style={styles.attachmentSheet}>
             <View style={styles.sheetTopRow}>
               <Text style={styles.sheetTitle}>Add Attachment</Text>
@@ -1274,7 +1279,24 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice, onOpenP
         onRequestClose={() => setDetailModalItem(null)}
       >
         <View style={styles.modalBackdrop}>
-          <View style={styles.pdfSheet}>
+          {/* Backdrop dismiss touchable: tapping outside the sheet closes the viewer */}
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => {
+              VoiceService.triggerHaptic('light');
+              setDetailModalItem(null);
+            }}
+            accessibilityLabel="Close details viewer"
+          />
+
+          <View
+            style={styles.pdfSheet}
+            onStartShouldSetResponder={() => true}
+          >
+            {/* Top pill handle */}
+            <View style={styles.sheetHandleBar} />
+
             <View style={styles.pdfHeader}>
               <View style={styles.pdfTitleRow}>
                 <View style={[styles.pdfBadgeIcon, detailModalItem?.type === 'email' && styles.emailBadgeIcon]}>
@@ -1285,19 +1307,24 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice, onOpenP
                   )}
                 </View>
                 <View style={{ flex: 1, paddingRight: 8 }}>
-                  <Text style={styles.pdfTitle} numberOfLines={1}>
+                  <Text style={styles.pdfTitle}>
                     {detailModalItem?.title}
                   </Text>
-                  <Text style={styles.pdfSub} numberOfLines={1}>
+                  <Text style={styles.pdfSub}>
                     {detailModalItem?.subtitle}
                   </Text>
                 </View>
               </View>
               <TouchableOpacity
-                onPress={() => setDetailModalItem(null)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                onPress={() => {
+                  VoiceService.triggerHaptic('light');
+                  setDetailModalItem(null);
+                }}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={styles.pdfCloseBtn}
+                accessibilityLabel="Close details"
               >
-                <X size={20} color={colors.textSecondary} />
+                <X size={18} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -2474,21 +2501,34 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: colors.cardBgSubtle,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    padding: 20,
-    maxHeight: '85%',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 24,
+    maxHeight: '88%',
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
+  },
+  sheetHandleBar: {
+    width: 38,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.textMuted,
+    opacity: 0.35,
+    alignSelf: 'center',
+    marginBottom: 12,
   },
   pdfHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    alignItems: 'flex-start',
+    marginBottom: 14,
+    gap: 8,
   },
   pdfTitleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 10,
+    flex: 1,
   },
   pdfBadgeIcon: {
     width: 32,
@@ -2497,6 +2537,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: 'rgba(239, 68, 68, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 2,
   },
   pdfBadgeIconText: {
     fontSize: 10,
@@ -2504,14 +2545,26 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: '#EF4444',
   },
   pdfTitle: {
-    fontSize: 14,
+    fontSize: 14.5,
     fontWeight: '700',
     color: colors.textPrimary,
+    lineHeight: 20,
   },
   pdfSub: {
     fontSize: 11,
     color: colors.textSecondary,
-    marginTop: 1,
+    marginTop: 3,
+    lineHeight: 15,
+  },
+  pdfCloseBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.cardBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.surfaceBorderSubtle,
   },
   pdfScrollContent: {
     paddingBottom: 16,
