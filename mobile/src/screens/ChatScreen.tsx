@@ -12,6 +12,7 @@ import {
   Modal,
   Animated,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import {
   Send,
@@ -271,6 +272,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice, onOpenP
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [cameraInitializing, setCameraInitializing] = useState(false);
+  const [cameraFacing, setCameraFacing] = useState<'user' | 'environment'>('environment');
   const videoRef = useRef<any>(null);
   const mediaStreamRef = useRef<any>(null);
 
@@ -514,7 +516,18 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice, onOpenP
   };
 
   // Camera Management (Item 2A)
-  const startCamera = async () => {
+  const handleSetVideoRef = (element: any) => {
+    videoRef.current = element;
+    if (element && mediaStreamRef.current) {
+      if (element.srcObject !== mediaStreamRef.current) {
+        element.srcObject = mediaStreamRef.current;
+      }
+      element.play().catch(() => {});
+    }
+  };
+
+  const startCamera = async (targetFacing?: 'user' | 'environment') => {
+    const facing = targetFacing || cameraFacing;
     setCameraCaptured(false);
     setCapturedImageUri(null);
     setCameraError(null);
@@ -522,9 +535,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice, onOpenP
 
     if (typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach((track: any) => track.stop());
+          mediaStreamRef.current = null;
+        }
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
-            facingMode: { ideal: 'environment' },
+            facingMode: { ideal: facing },
             width: { ideal: 1280 },
             height: { ideal: 720 },
           },
@@ -540,16 +557,23 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice, onOpenP
         console.warn('Camera getUserMedia error:', err);
         setCameraError(
           err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError'
-            ? 'Camera permission denied. Please allow camera permissions in browser settings.'
+            ? 'Camera permission denied. Please allow camera access in browser settings.'
             : 'Camera hardware is busy, disconnected, or unavailable on this device.'
         );
       } finally {
         setCameraInitializing(false);
       }
     } else {
-      setCameraError('Camera API is not supported on this browser or platform.');
+      setCameraError('Camera API is not supported on this device or platform.');
       setCameraInitializing(false);
     }
+  };
+
+  const handleToggleCameraFacing = () => {
+    VoiceService.triggerHaptic('medium');
+    const nextFacing = cameraFacing === 'environment' ? 'user' : 'environment';
+    setCameraFacing(nextFacing);
+    startCamera(nextFacing);
   };
 
   const stopCamera = () => {
@@ -1077,7 +1101,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice, onOpenP
                 <View style={styles.cameraLiveDot} />
                 <Text style={styles.cameraTitleText}>MIRAS Neural Vision</Text>
               </View>
-              <TouchableOpacity style={styles.cameraIconBtn} onPress={startCamera}>
+              <TouchableOpacity style={styles.cameraIconBtn} onPress={handleToggleCameraFacing}>
                 <RotateCw size={18} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
@@ -1112,7 +1136,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice, onOpenP
                     <AlertCircle size={32} color="#FF5252" />
                     <Text style={styles.cameraErrorTitle}>Camera Access Required</Text>
                     <Text style={styles.cameraErrorText}>{cameraError}</Text>
-                    <TouchableOpacity style={styles.retryCameraBtn} onPress={startCamera}>
+                    <TouchableOpacity style={styles.retryCameraBtn} onPress={() => startCamera()}>
                       <RotateCw size={14} color="#000000" />
                       <Text style={styles.retryCameraBtnText}>Retry Camera</Text>
                     </TouchableOpacity>
@@ -1121,7 +1145,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice, onOpenP
                   <View style={styles.liveFinderContent}>
                     {Platform.OS === 'web' && (
                       <video
-                        ref={videoRef as any}
+                        ref={handleSetVideoRef as any}
                         autoPlay
                         playsInline
                         muted
@@ -1132,21 +1156,18 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice, onOpenP
                           width: '100%',
                           height: '100%',
                           objectFit: 'cover',
-                          borderRadius: 12,
+                          borderRadius: 14,
+                          backgroundColor: '#000000',
+                          transform: cameraFacing === 'user' ? 'scaleX(-1)' : 'none',
                         } as any}
                       />
                     )}
-                    <View style={styles.liveFinderOverlay}>
-                      <Camera size={36} color="rgba(0, 229, 153, 0.4)" />
-                      <Text style={styles.finderGuideText}>
-                        Align document, receipt, bill, or text inside frame
-                      </Text>
-                      <View style={styles.viewfinderModeTags}>
-                        <Text style={styles.modeTagActive}>● Document</Text>
-                        <Text style={styles.modeTag}>Translate</Text>
-                        <Text style={styles.modeTag}>Object</Text>
+                    {cameraInitializing && (
+                      <View style={styles.cameraStartingBox}>
+                        <ActivityIndicator size="small" color="#00FFA3" />
+                        <Text style={styles.cameraStartingText}>Connecting live camera...</Text>
                       </View>
-                    </View>
+                    )}
                   </View>
                 )
               ) : (
@@ -2311,6 +2332,7 @@ const createStyles = (colors: ThemeColors) => {
     width: 20,
     height: 20,
     borderColor: '#00FFA3',
+    zIndex: 10,
   },
   bracketTopLeft: {
     top: 10,
@@ -2346,37 +2368,28 @@ const createStyles = (colors: ThemeColors) => {
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 8,
-    zIndex: 10,
+    zIndex: 12,
   },
   liveFinderContent: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 24,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    borderRadius: 16,
   },
-  finderGuideText: {
+  cameraStartingBox: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    zIndex: 2,
+  },
+  cameraStartingText: {
     fontSize: 12,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  viewfinderModeTags: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
-  },
-  modeTagActive: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.primary,
-    backgroundColor: 'rgba(0, 229, 153, 0.1)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  modeTag: {
-    fontSize: 11,
-    color: colors.textMuted,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    color: '#A0AEC0',
+    fontWeight: '600',
   },
   capturedPhotoPreview: {
     alignItems: 'center',
@@ -2710,17 +2723,7 @@ const createStyles = (colors: ThemeColors) => {
     objectFit: 'cover',
     borderRadius: 16,
   },
-  liveFinderOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-  },
+
   cameraErrorBox: {
     padding: 24,
     alignItems: 'center',
