@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import { ThemeColors, useTheme } from '../theme/colors';
 import { ProfileModal } from '../components/ProfileModal';
 import { AuthorizationModal } from '../components/AuthorizationModal';
@@ -9,8 +9,6 @@ import { VoiceHomeScreenProps, SessionMessage } from '../types/voiceHome';
 import { INITIAL_SESSION_MESSAGES } from '../data/voiceHomeData';
 import { VoiceAssistantPage } from '../components/voiceHome/VoiceAssistantPage';
 import { SessionConversationPage } from '../components/voiceHome/SessionConversationPage';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export type { VoiceHomeScreenProps, SessionMessage };
 
@@ -23,7 +21,9 @@ export const VoiceHomeScreen: React.FC<VoiceHomeScreenProps> = ({
   onSubmitQuery,
   onDismissTask,
   onOpenProfile,
+  onClose,
 }) => {
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const horizontalScrollRef = useRef<any>(null);
@@ -137,6 +137,7 @@ export const VoiceHomeScreen: React.FC<VoiceHomeScreenProps> = ({
           onOpenProfile={onOpenProfile || (() => setIsProfileOpen(true))}
           onSlideToConversation={handleSlideToConversation}
           messageCount={sessionMessages.length}
+          onClose={onClose}
         />
 
         {/* PAGE 1: CURRENT CONVERSATION MESSAGES */}

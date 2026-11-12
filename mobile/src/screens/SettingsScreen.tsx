@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
-import { Moon, Sun, Check } from 'lucide-react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Switch, GestureResponderEvent } from 'react-native';
+import { Moon, Sun, Check, Mic } from 'lucide-react-native';
 import { ThemeColors, useTheme } from '../theme/colors';
 import { AIModelConfig } from '../types';
 import { VoiceService } from '../services/voiceService';
@@ -18,18 +18,23 @@ interface SettingsScreenProps {
   selectedModel?: AIModelConfig;
   onSelectModel?: (model: AIModelConfig) => void;
   onOpenProfile?: () => void;
+  assistantModeEnabled?: boolean;
+  onToggleAssistantMode?: (val: boolean) => void;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   selectedModel = AI_MODELS[0],
   onSelectModel,
   onOpenProfile,
+  assistantModeEnabled = false,
+  onToggleAssistantMode,
 }) => {
-  const { colors, themeName, setTheme } = useTheme();
+  const { colors, themeName, requestThemeTransition } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const [currentModel, setCurrentModel] = useState<AIModelConfig>(selectedModel);
   const [isModelPickerOpen, setIsModelPickerOpen] = useState(false);
   const isDark = themeName === 'midnight';
+  const themeToggleRef = useRef<React.ComponentRef<typeof View>>(null);
 
   const [transitMode, setTransitMode] = useState(VoiceService.isMutedMode());
   const [autoSpeech, setAutoSpeech] = useState(!VoiceService.isMutedMode());
@@ -52,7 +57,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }).start();
   }, [themeName, rotateAnim]);
 
-  const handleToggleTheme = () => {
+  const handleToggleTheme = (event?: GestureResponderEvent) => {
     VoiceService.triggerHaptic('medium');
     const nextTheme = themeName === 'midnight' ? 'midnight-day' : 'midnight';
 
@@ -77,10 +82,33 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       ]),
     ]).start();
 
-    setTheme(nextTheme);
-    const label = nextTheme === 'midnight' ? 'Dark Mode' : 'Day Mode';
-    setStatusMessage(`Theme switched to ${label}`);
-    setTimeout(() => setStatusMessage(null), 2500);
+    const fallbackX = event?.nativeEvent?.pageX;
+    const fallbackY = event?.nativeEvent?.pageY;
+
+    if (themeToggleRef.current && typeof themeToggleRef.current.measureInWindow === 'function') {
+      themeToggleRef.current.measureInWindow((x: number, y: number, width: number, height: number) => {
+        const origin =
+          width > 0 && height > 0
+            ? { x: x + width / 2, y: y + height / 2 }
+            : fallbackX !== undefined && fallbackY !== undefined
+              ? { x: fallbackX, y: fallbackY }
+              : undefined;
+        requestThemeTransition(nextTheme, origin);
+      });
+    } else {
+      const origin =
+        fallbackX !== undefined && fallbackY !== undefined
+          ? { x: fallbackX, y: fallbackY }
+          : undefined;
+      requestThemeTransition(nextTheme, origin);
+    }
+  };
+
+  const handleAssistantModeChange = (val: boolean) => {
+    VoiceService.triggerHaptic('medium');
+    if (onToggleAssistantMode) {
+      onToggleAssistantMode(val);
+    }
   };
 
   const themeIconRotate = rotateAnim.interpolate({
@@ -146,20 +174,22 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
           <View style={styles.headerActionsGroup}>
             {/* Animated Sun / Moon Theme Toggle */}
-            <TouchableOpacity
-              style={styles.themeToggleBtn}
-              onPress={handleToggleTheme}
-              activeOpacity={0.7}
-              accessibilityLabel="Toggle Theme Mode"
-            >
-              <Animated.View
-                style={{
-                  transform: [{ rotate: themeIconRotate }, { scale: scaleAnim }],
-                }}
+            <View ref={themeToggleRef} collapsable={false}>
+              <TouchableOpacity
+                style={styles.themeToggleBtn}
+                onPress={handleToggleTheme}
+                activeOpacity={0.7}
+                accessibilityLabel="Toggle Theme Mode"
               >
-                {isDark ? <Moon size={18} color="#0CB981" /> : <Sun size={18} color="#D97706" />}
-              </Animated.View>
-            </TouchableOpacity>
+                <Animated.View
+                  style={{
+                    transform: [{ rotate: themeIconRotate }, { scale: scaleAnim }],
+                  }}
+                >
+                  {isDark ? <Moon size={18} color="#0CB981" /> : <Sun size={18} color="#D97706" />}
+                </Animated.View>
+              </TouchableOpacity>
+            </View>
 
             {/* Profile Avatar Icon beside Page Title */}
             {onOpenProfile && (
@@ -184,6 +214,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <Text style={styles.toastText}>{statusMessage}</Text>
           </View>
         )}
+      </View>
+
+      {/* 0. ASSISTANT MODE OVERLAY TOGGLE */}
+      <View style={styles.assistantModeCard}>
+        <View style={styles.assistantModeLeft}>
+          <View style={styles.assistantModeIconWrap}>
+            <Mic size={18} color={colors.primary} />
+          </View>
+          <View style={styles.assistantModeTextCol}>
+            <Text style={styles.assistantModeTitle}>Assistant Mode</Text>
+            <Text style={styles.assistantModeSub}>
+              Show a movable floating icon over the app to open Voice Assistant & Conversation
+            </Text>
+          </View>
+        </View>
+        <Switch
+          value={assistantModeEnabled}
+          onValueChange={handleAssistantModeChange}
+          trackColor={{ false: colors.cardBgElevated, true: colors.primaryDeep }}
+          thumbColor={assistantModeEnabled ? colors.primary : colors.textMuted}
+        />
       </View>
 
       {/* 1. ACTIVE AI FOUNDATION MODEL */}
@@ -311,5 +362,45 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: 12,
       fontWeight: '700',
       color: colors.buttonTextDark,
+    },
+    assistantModeCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.cardBg,
+      borderRadius: 16,
+      padding: 14,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+    },
+    assistantModeLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      paddingRight: 12,
+      gap: 12,
+    },
+    assistantModeIconWrap: {
+      width: 38,
+      height: 38,
+      borderRadius: 12,
+      backgroundColor: colors.badgeBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    assistantModeTextCol: {
+      flex: 1,
+    },
+    assistantModeTitle: {
+      fontSize: 14,
+      fontWeight: '800',
+      color: colors.textPrimary,
+    },
+    assistantModeSub: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 2,
+      lineHeight: 15,
     },
   });

@@ -11,6 +11,7 @@ export interface VoiceHomeScreenProps {
   selectedModelName?: string;
   onDismissTask?: () => void;
   onOpenProfile?: () => void;
+  onClose?: () => void;
 }
 
 export interface SessionMessage {

@@ -20,7 +20,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.miras.voiceassistant",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "favicon": "./assets/favicon.png"

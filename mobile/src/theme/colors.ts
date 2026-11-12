@@ -188,6 +188,11 @@ export const ThemeManager = {
   },
 };
 
+export interface ThemeTransitionOrigin {
+  x: number;
+  y: number;
+}
+
 export interface ThemeContextValue {
   themeName: ThemeName;
   colors: ThemeColors;
@@ -199,6 +204,7 @@ export interface ThemeContextValue {
   isClaude?: boolean;
   setTheme: (name: ThemeName) => void;
   toggleTheme: () => void;
+  requestThemeTransition: (name: ThemeName, origin?: ThemeTransitionOrigin) => void;
 }
 
 export const ThemeContext = createContext<ThemeContextValue>({
@@ -212,9 +218,13 @@ export const ThemeContext = createContext<ThemeContextValue>({
   isClaude: false,
   setTheme: () => {},
   toggleTheme: () => {},
+  requestThemeTransition: (name) => ThemeManager.setTheme(name),
 });
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const ThemeProvider: React.FC<{
+  children: React.ReactNode;
+  onRequestTransition?: (name: ThemeName, origin?: ThemeTransitionOrigin) => void;
+}> = ({ children, onRequestTransition }) => {
   const [themeName, setThemeName] = useState<ThemeName>(() => ThemeManager.getTheme());
 
   useEffect(() => {
@@ -245,6 +255,33 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         isClaude: false,
         setTheme: ThemeManager.setTheme,
         toggleTheme: ThemeManager.toggleTheme,
+        requestThemeTransition: onRequestTransition ?? ((name) => ThemeManager.setTheme(name)),
+      },
+    },
+    children
+  );
+};
+
+export const ThemeOverrideProvider: React.FC<{
+  themeName: ThemeName;
+  children: React.ReactNode;
+}> = ({ themeName, children }) => {
+  const colors = getThemeObject(themeName);
+  return React.createElement(
+    ThemeContext.Provider,
+    {
+      value: {
+        themeName,
+        colors,
+        isDark: themeName === 'midnight',
+        isDay: themeName === 'midnight-day',
+        isMidnight: themeName === 'midnight',
+        isMidnightDay: themeName === 'midnight-day',
+        isCyber: false,
+        isClaude: false,
+        setTheme: ThemeManager.setTheme,
+        toggleTheme: ThemeManager.toggleTheme,
+        requestThemeTransition: (name) => ThemeManager.setTheme(name),
       },
     },
     children
@@ -267,6 +304,7 @@ export const useTheme = (): ThemeContextValue => {
       isClaude: false,
       setTheme: ThemeManager.setTheme,
       toggleTheme: ThemeManager.toggleTheme,
+      requestThemeTransition: (n) => ThemeManager.setTheme(n),
     };
   }
   return ctx;

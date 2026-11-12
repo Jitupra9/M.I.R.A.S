@@ -1,31 +1,116 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
-  KeyboardAvoidingView,
   Platform,
   Animated,
+  View,
+  Text,
+  TouchableOpacity,
+  Keyboard,
+  Dimensions,
 } from 'react-native';
 import { ThemeColors, useTheme } from '../theme/colors';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { VoiceService } from '../services/voiceService';
 import { ProfileModal } from '../components/ProfileModal';
 import { AppHeader } from '../components/AppHeader';
+import { MirasLogo } from '../components/MirasLogo';
 
 // Shared types and initial data
-import { DetailViewItem, EmailSummaryItem, Message, ChatScreenProps } from '../types/chat';
-import { INITIAL_CHAT, INITIAL_EMAILS_DATA } from '../data/chatData';
+import {
+  DetailViewItem,
+  EmailSummaryItem,
+  Message,
+  ChatScreenProps,
+  ChatConversation,
+} from '../types/chat';
+import { INITIAL_CONVERSATIONS, INITIAL_EMAILS_DATA } from '../data/chatData';
 
 // Modular chat components
 import { ChatMessageList } from '../components/chat/ChatMessageList';
 import { ChatInputBar } from '../components/chat/ChatInputBar';
+import { ChatHistorySidebar } from '../components/chat/ChatHistorySidebar';
 import { AttachmentOptionsSheet } from '../components/chat/AttachmentOptionsSheet';
 import { CameraScannerModal } from '../components/chat/CameraScannerModal';
 import { DetailViewerModal } from '../components/chat/DetailViewerModal';
 
 export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice, onOpenProfile }) => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
 
-  const [messages, setMessages] = useState<Message[]>(INITIAL_CHAT);
+  const containerRef = useRef<React.ComponentRef<typeof View>>(null);
+  const keyboardTopRef = useRef<number | null>(null);
+  const keyboardHeightRef = useRef<number>(0);
+  const keyboardPaddingAnim = useRef(new Animated.Value(0)).current;
+
+  const updateKeyboardOverlap = useCallback((duration = 180) => {
+    const keyboardTop = keyboardTopRef.current;
+    if (keyboardTop === null) {
+      Animated.timing(keyboardPaddingAnim, {
+        toValue: 0,
+        duration,
+        useNativeDriver: false,
+      }).start();
+      return;
+    }
+
+    const extraClearance = Platform.OS === 'android' ? insets.top + 12 : 6;
+
+    if (containerRef.current && typeof containerRef.current.measureInWindow === 'function') {
+      containerRef.current.measureInWindow((_x: number, y: number, _w: number, h: number) => {
+        const baseOverlap =
+          h > 0 ? Math.max(0, y + h - keyboardTop) : keyboardHeightRef.current;
+        const targetPadding = baseOverlap + extraClearance;
+        Animated.timing(keyboardPaddingAnim, {
+          toValue: targetPadding,
+          duration,
+          useNativeDriver: false,
+        }).start();
+      });
+    } else {
+      Animated.timing(keyboardPaddingAnim, {
+        toValue: keyboardHeightRef.current + extraClearance,
+        duration,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [keyboardPaddingAnim, insets.top]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      const kbHeight = e.endCoordinates?.height ?? 0;
+      const kbTop =
+        e.endCoordinates?.screenY && e.endCoordinates.screenY > 0
+          ? e.endCoordinates.screenY
+          : Dimensions.get('window').height - kbHeight;
+
+      keyboardTopRef.current = kbTop;
+      keyboardHeightRef.current = kbHeight;
+      updateKeyboardOverlap(e.duration && e.duration > 0 ? e.duration : 180);
+    });
+
+    const hideSub = Keyboard.addListener(hideEvent, (e) => {
+      keyboardTopRef.current = null;
+      keyboardHeightRef.current = 0;
+      updateKeyboardOverlap(e?.duration && e.duration > 0 ? e.duration : 180);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [updateKeyboardOverlap]);
+
+  const [conversations, setConversations] = useState<ChatConversation[]>(INITIAL_CONVERSATIONS);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [inputText, setInputText] = useState('');
   const [detailModalItem, setDetailModalItem] = useState<DetailViewItem | null>(null);
   const [isAttachmentSheetOpen, setIsAttachmentSheetOpen] = useState(false);
@@ -44,6 +129,55 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice, onOpenP
 
   const [selectedScanAction, setSelectedScanAction] = useState<'ideas' | 'translate' | 'extract' | null>(null);
   const [isScanningAnimation, setIsScanningAnimation] = useState(false);
+
+  // Keep active conversation synced in history sidebar
+  useEffect(() => {
+    if (messages.length === 0) return;
+
+    const lastMsg = messages[messages.length - 1];
+    const firstUserMsg = messages.find(m => m.sender === 'user');
+
+    if (activeConversationId === null) {
+      const newId = `conv-${Date.now()}`;
+      const rawTitle = firstUserMsg?.text || 'New Conversation';
+      const title = rawTitle.length > 34 ? `${rawTitle.slice(0, 34)}...` : rawTitle;
+      const newConv: ChatConversation = {
+        id: newId,
+        title,
+        preview: lastMsg.text,
+        updatedAt: lastMsg.time || 'Just now',
+        messages,
+      };
+      setActiveConversationId(newId);
+      setConversations(prev => [newConv, ...prev]);
+    } else {
+      setConversations(prev =>
+        prev.map(conv =>
+          conv.id === activeConversationId
+            ? {
+                ...conv,
+                preview: lastMsg.text,
+                updatedAt: lastMsg.time || conv.updatedAt,
+                messages,
+              }
+            : conv
+        )
+      );
+    }
+  }, [messages, activeConversationId]);
+
+  const handleSelectConversation = (conv: ChatConversation) => {
+    VoiceService.triggerHaptic('light');
+    setActiveConversationId(conv.id);
+    setMessages(conv.messages);
+  };
+
+  const handleNewChat = () => {
+    VoiceService.triggerHaptic('light');
+    setActiveConversationId(null);
+    setMessages([]);
+    setInputText('');
+  };
 
   // Scanning laser beam animated value
   const scanLaserAnim = useRef(new Animated.Value(0)).current;
@@ -482,22 +616,62 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice, onOpenP
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.container}
+    <Animated.View
+      ref={containerRef}
+      collapsable={false}
+      onLayout={() => {
+        if (keyboardTopRef.current !== null) {
+          updateKeyboardOverlap(120);
+        }
+      }}
+      style={[styles.container, { paddingBottom: keyboardPaddingAnim }]}
     >
       {/* Top Header */}
-      <AppHeader onOpenProfile={onOpenProfile || (() => setIsProfileOpen(true))} />
-
-      {/* Messages Feed */}
-      <ChatMessageList
-        messages={messages}
-        onToggleExpand={toggleMessageExpand}
-        onPayBill={handlePayBill}
-        onOpenPdfDetails={handleOpenPdfDetails}
-        onOpenEmailDetails={handleOpenEmailDetails}
-        onRemoveAttachment={handleRemoveAttachment}
+      <AppHeader
+        onOpenProfile={onOpenProfile || (() => setIsProfileOpen(true))}
+        onOpenSidebar={() => {
+          VoiceService.triggerHaptic('light');
+          setIsSidebarOpen(true);
+        }}
       />
+
+      {/* Messages Feed or Empty Chat Welcome */}
+      {messages.length === 0 ? (
+        <View style={styles.emptyState}>
+          <View style={styles.emptyLogoRing}>
+            <MirasLogo size={38} glow glowColor={colors.primary} />
+          </View>
+          <Text style={styles.emptyTitle}>How can I help you today?</Text>
+          <Text style={styles.emptySubtitle}>
+            Start a fresh conversation or open the sidebar menu to continue a previous chat.
+          </Text>
+          <View style={styles.quickPromptsWrap}>
+            {[
+              'Check priority emails',
+              'Check my electricity bill',
+              'Check Delta flight status',
+            ].map(prompt => (
+              <TouchableOpacity
+                key={prompt}
+                style={styles.quickPromptChip}
+                onPress={() => handleSend(prompt)}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.quickPromptText}>{prompt}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      ) : (
+        <ChatMessageList
+          messages={messages}
+          onToggleExpand={toggleMessageExpand}
+          onPayBill={handlePayBill}
+          onOpenPdfDetails={handleOpenPdfDetails}
+          onOpenEmailDetails={handleOpenEmailDetails}
+          onRemoveAttachment={handleRemoveAttachment}
+        />
+      )}
 
       {/* Bottom Message Input Bar */}
       <ChatInputBar
@@ -554,7 +728,17 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice, onOpenP
 
       {/* Profile & Settings Modal */}
       <ProfileModal visible={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
-    </KeyboardAvoidingView>
+
+      {/* Previous Conversations Sidebar Drawer */}
+      <ChatHistorySidebar
+        visible={isSidebarOpen}
+        conversations={conversations}
+        activeConversationId={activeConversationId}
+        onClose={() => setIsSidebarOpen(false)}
+        onSelectConversation={handleSelectConversation}
+        onNewChat={handleNewChat}
+      />
+    </Animated.View>
   );
 };
 
@@ -563,6 +747,57 @@ const createStyles = (colors: ThemeColors) => {
     container: {
       flex: 1,
       backgroundColor: colors.background,
+    },
+    emptyState: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 28,
+    },
+    emptyLogoRing: {
+      width: 68,
+      height: 68,
+      borderRadius: 34,
+      backgroundColor: colors.badgeBg,
+      borderWidth: 1,
+      borderColor: colors.primaryBorder,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
+    emptyTitle: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: colors.textPrimary,
+      textAlign: 'center',
+      letterSpacing: -0.3,
+    },
+    emptySubtitle: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginTop: 6,
+      lineHeight: 19,
+    },
+    quickPromptsWrap: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: 8,
+      marginTop: 20,
+    },
+    quickPromptChip: {
+      backgroundColor: colors.cardBg,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+      borderRadius: 16,
+      paddingHorizontal: 13,
+      paddingVertical: 8,
+    },
+    quickPromptText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.primary,
     },
   });
 };

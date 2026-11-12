@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { MessageSquare, ArrowRight } from 'lucide-react-native';
+import { MessageSquare, ArrowRight, X } from 'lucide-react-native';
 import { ThemeColors, useTheme } from '../../theme/colors';
 import { VoiceState } from '../../types';
 import { VoiceOrb } from '../VoiceOrb';
@@ -14,6 +14,7 @@ interface VoiceAssistantPageProps {
   onOpenProfile: () => void;
   onSlideToConversation: () => void;
   messageCount: number;
+  onClose?: () => void;
 }
 
 export const VoiceAssistantPage: React.FC<VoiceAssistantPageProps> = ({
@@ -24,14 +25,31 @@ export const VoiceAssistantPage: React.FC<VoiceAssistantPageProps> = ({
   onOpenProfile,
   onSlideToConversation,
   messageCount,
+  onClose,
 }) => {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <View style={[styles.pageWrapper, { width: screenWidth }]}>
-      {/* Top Bar: Profile icon only in the top-right corner */}
-      <View style={styles.topRightProfileContainer}>
+      {/* Top Bar: Close button (when overlay) on left, Profile icon on right */}
+      <View
+        style={[
+          styles.topRightProfileContainer,
+          onClose ? { justifyContent: 'space-between' } : null,
+        ]}
+      >
+        {onClose && (
+          <TouchableOpacity
+            style={styles.closeBtn}
+            onPress={onClose}
+            activeOpacity={0.7}
+            accessibilityLabel="Close Assistant"
+          >
+            <X size={18} color={colors.textPrimary} />
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
           style={[styles.userAvatar, { backgroundColor: colors.primary }]}
           onPress={onOpenProfile}
@@ -127,6 +145,16 @@ const createStyles = (colors: ThemeColors) =>
       height: 30,
       borderRadius: 15,
       backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeBtn: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      backgroundColor: colors.cardBgElevated,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
       alignItems: 'center',
       justifyContent: 'center',
     },

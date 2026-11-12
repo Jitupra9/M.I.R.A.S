@@ -30,6 +30,8 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
       keyExtractor={item => item.id}
       contentContainerStyle={styles.listContent}
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
       renderItem={({ item }) => (
         <ChatMessageItem
           item={item}

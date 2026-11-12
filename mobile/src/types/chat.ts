@@ -102,6 +102,14 @@ export interface Message {
   scanData?: ScanData;
 }
 
+export interface ChatConversation {
+  id: string;
+  title: string;
+  preview: string;
+  updatedAt: string;
+  messages: Message[];
+}
+
 export interface ChatScreenProps {
   onSwitchToVoice?: () => void;
   onOpenProfile?: () => void;

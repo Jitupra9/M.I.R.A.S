@@ -1,4 +1,4 @@
-import { EmailSummaryItem, Message } from '../types/chat';
+import { EmailSummaryItem, Message, ChatConversation } from '../types/chat';
 
 export const INITIAL_EMAILS_DATA: EmailSummaryItem[] = [
   {
@@ -102,5 +102,77 @@ export const INITIAL_CHAT: Message[] = [
       name: 'ConEd_Oct11_Statement.pdf',
       sub: 'Attached statement from bill • 142 KB',
     },
+  },
+];
+
+export const INITIAL_CONVERSATIONS: ChatConversation[] = [
+  {
+    id: 'conv-electricity',
+    title: 'Electricity Bill & Payment',
+    preview: 'Scheduled ConEdison ($142.50) payment for Friday, Oct 18.',
+    updatedAt: 'Yesterday • 10:43 AM',
+    messages: INITIAL_CHAT,
+  },
+  {
+    id: 'conv-emails',
+    title: 'Priority Inbox Triage',
+    preview: '3 important emails requiring attention (Delta, Beacon, Apex).',
+    updatedAt: 'Oct 16',
+    messages: [
+      {
+        id: 'e-msg-1',
+        sender: 'user',
+        text: 'Give me list mails whose need to check once and important to me',
+        time: '09:15 AM',
+      },
+      {
+        id: 'e-msg-2',
+        sender: 'mira',
+        text: "Here are your 3 most important emails requiring attention. Tap 'See More' to expand full details:",
+        time: '09:15 AM',
+        cardType: 'email_list',
+        isExpanded: false,
+        emailData: {
+          title: 'Priority Inbox Triage (3 Mails)',
+          items: INITIAL_EMAILS_DATA,
+        },
+      },
+    ],
+  },
+  {
+    id: 'conv-flight',
+    title: 'Delta Flight #DL 1482 Check-In',
+    preview: 'New York (JFK) → Chicago (ORD) • Check-in paused for SMS code.',
+    updatedAt: 'Oct 15',
+    messages: [
+      {
+        id: 'f-msg-1',
+        sender: 'user',
+        text: 'Check my Delta flight to Chicago today',
+        time: '02:10 PM',
+      },
+      {
+        id: 'f-msg-2',
+        sender: 'mira',
+        text: 'I found your Delta flight #DL 1482 to Chicago. Check-in is paused waiting for your security authorization:',
+        time: '02:10 PM',
+        cardType: 'flight_card',
+        isExpanded: false,
+        flightData: {
+          airline: 'Delta Air Lines',
+          flightNumber: 'DL 1482',
+          departureCity: 'New York (JFK)',
+          arrivalCity: 'Chicago (ORD)',
+          departureTime: '04:30 PM Today',
+          arrivalTime: '06:25 PM Today (Non-stop)',
+          seat: '12F (Preferred Window)',
+          terminal: 'Terminal 4',
+          gate: 'Gate B22',
+          price: '$214.00 (Confirmed)',
+          baggage: '1 Carry-on included • Personal item stowed',
+          status: 'Check-In Paused for SMS Code',
+        },
+      },
+    ],
   },
 ];
