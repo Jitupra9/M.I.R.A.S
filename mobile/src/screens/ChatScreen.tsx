@@ -55,7 +55,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ onSwitchToVoice, onOpenP
       return;
     }
 
-    const extraClearance = Platform.OS === 'android' ? insets.top + 12 : 6;
+    // Fine-tune clearance so the input bar sits right on top of the keyboard like WhatsApp
+    const extraClearance = Platform.OS === 'android' ? 4 : 2;
 
     if (containerRef.current && typeof containerRef.current.measureInWindow === 'function') {
       containerRef.current.measureInWindow((_x: number, y: number, _w: number, h: number) => {
